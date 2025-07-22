@@ -1,0 +1,68 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    base64 (0.3.0)
+    daemons (1.4.1)
+    eventmachine (1.2.7)
+    haml (6.3.0)
+      temple (>= 0.8.2)
+      thor
+      tilt
+    logger (1.7.0)
+    matrix (0.4.3)
+    mustermann (3.0.3)
+      ruby2_keywords (~> 0.0.1)
+    pp (0.6.2)
+      prettyprint
+    prettyprint (0.2.0)
+    rack (3.1.16)
+    rack-flash3 (1.0.5)
+      rack
+    rack-protection (4.1.1)
+      base64 (>= 0.1.0)
+      logger (>= 1.6.0)
+      rack (>= 3.0.0, < 4)
+    rack-session (2.1.1)
+      base64 (>= 0.1.0)
+      rack (>= 3.0.0)
+    rackup (2.2.1)
+      rack (>= 3)
+    ruby2_keywords (0.0.5)
+    sinatra (4.1.1)
+      logger (>= 1.6.0)
+      mustermann (~> 3.0)
+      rack (>= 3.0.0, < 4)
+      rack-protection (= 4.1.1)
+      rack-session (>= 2.0.0, < 3)
+      tilt (~> 2.0)
+    sinatra-formhelpers-ng (1.9.1)
+    singleton (0.3.0)
+    temple (0.10.3)
+    thin (2.0.1)
+      daemons (~> 1.0, >= 1.0.9)
+      eventmachine (~> 1.0, >= 1.0.4)
+      logger
+      rack (>= 1, < 4)
+    thor (1.4.0)
+    tilt (2.6.1)
+    yaml (0.4.0)
+
+PLATFORMS
+  x86_64-linux
+
+DEPENDENCIES
+  haml
+  logger
+  matrix (~> 0.4)
+  pp
+  rack
+  rack-flash3
+  rackup
+  sinatra
+  sinatra-formhelpers-ng
+  singleton
+  thin
+  yaml
+
+BUNDLED WITH
+   2.4.10
