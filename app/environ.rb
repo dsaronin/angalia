@@ -1,4 +1,4 @@
-# Angalia: A Remote Elder Monitoring System Client
+# Angalia: A Remote Elder Monitoring Hub
 # Copyright (c) 2025 David S Anderson, All Rights Reserved
 #
 # class Environ -- sets up & control environment for application
@@ -19,8 +19,9 @@ class Environ
 # constants ... #TODO replace with config file?
   APP_NAME = "Angalia"
   APP_NAME_HEAD = APP_NAME + ": "
-  ANGALIA_VERSION = "0.01"
-  ANGALIA_HELP = "status (s), options (o), help (h), quit (q), exit (x)"
+  ANGALIA_VERSION = "0.03"
+  ANGALIA_HELP = "flags (f), options (o), help (h), version (v), quit (q), exit (x)" +
+    "start meet (s), end meet (e), webcam (w), camctl (c)"
   #  ------------------------------------------------------------
   EXIT_CMD  = "q"  # default CLI exit command used if EOF
   #  ------------------------------------------------------------
@@ -69,35 +70,35 @@ class Environ
   end
 
   #  ------------------------------------------------------------
-  # log_debug -- wraps a logger message in AnsiColor & Hocasi name
+  # log_debug -- wraps a logger message in AnsiColor & app name
   #  ------------------------------------------------------------
   def Environ.log_debug( msg )
     @@logger.debug wrapYellow app_name_head + msg
   end
 
   #  ------------------------------------------------------------
-  # log_info -- wraps a logger message in AnsiColor & Hocasi name
+  # log_info -- wraps a logger message in AnsiColor & app name
   #  ------------------------------------------------------------
   def Environ.log_info( msg )
     @@logger.info wrapCyan app_name_head + msg
   end
 
   #  ------------------------------------------------------------
-  # log_warn -- wraps a logger message in AnsiColor & Hocasi name
+  # log_warn -- wraps a logger message in AnsiColor & app name
   #  ------------------------------------------------------------
   def Environ.log_warn( msg )
     @@logger.warn wrapGreen app_name_head + msg
   end
 
   #  ------------------------------------------------------------
-  # log_error -- wraps a logger message in AnsiColor & Hocasi name
+  # log_error -- wraps a logger message in AnsiColor & app name
   #  ------------------------------------------------------------
   def Environ.log_error( msg )
     @@logger.error wrapRed APP_NAME_HEAD + msg
   end
 
   #  ------------------------------------------------------------
-  # log_fatal -- wraps a logger message in AnsiColor & Hocasi name
+  # log_fatal -- wraps a logger message in AnsiColor & app name
   #  ------------------------------------------------------------
   def Environ.log_fatal( msg )
     @@logger.fatal wrapRedBold app_name_head + msg
@@ -129,14 +130,14 @@ class Environ
 
 end  # Class Environ
 
-class TopicError < StandardError
-  def initialize(msg="Topic not found")
+class MajorError < StandardError
+  def initialize(msg="Something not found")
     super(msg)
   end
 end
 
-class EntryError < StandardError
-  def initialize(msg="Entry not found for Source")
+class MinorError < StandardError
+  def initialize(msg="Something not done")
     super(msg)
   end
 end

@@ -83,22 +83,6 @@ class AngaliaWork
     return sts
   end
 
-  #  ------------------------------------------------------------
-  #  do_flashcards  -- intiates flashcard handling
-  #  returns: self obj or nil if exception
-  #  ------------------------------------------------------------
-  def do_flashcards( list, settings )
-    begin
-      return FlashManager.new( list.first, settings )
-    rescue TopicError
-      Environ.put_and_log_error( ">>  " + $!.message )
-    rescue EntryError
-      Environ.put_and_log_error( ">>  " + $!.message )
-    end  # exception handling
-
-    return nil
-  end
-
 
   #  ------------------------------------------------------------
   #  ------------------------------------------------------------

@@ -1,15 +1,15 @@
 # config.ru
 
 require 'sinatra'
-require_relative './app/hocasi_app'
-require_relative './app/hocasi_work'
+require_relative './app/angalia_app'
+require_relative './app/angalia_work'
 
 configure do
   ENV['SINATRA_ENV'] ||= "development"
   ENV['RACK_ENV']    ||= "development"
 
-  HOCASI = HocasiWork.new 
-  HOCASI.setup_work()    # initialization of everything
+  ANGALIA = AngaliaWork.new 
+  ANGALIA.setup_work()    # initialization of everything
 
   PUBLIC_DIR = File.join(File.dirname(__FILE__), 'public')
   set :public_folder, PUBLIC_DIR
@@ -21,7 +21,7 @@ configure do
 
 end  # configure
 
-run HocasiApp
+run AngaliaApp
 
 
 # notes

@@ -1,11 +1,11 @@
-# DrillTutor: A Drill Sergent for language students
-# Copyright (c) 2023 David S Anderson, All Rights Reserved
+# Angalia: A Remote Elder Monitoring Hub
+# Copyright (c) 2025 David S Anderson, All Rights Reserved
 #
 # class AngaliaCLI -- 'controller' for CLI
 #
 
 class AngaliaCLI
-  require_relative 'hocasi_work'
+  require_relative 'angalia_work'
 
     ANGALIA = AngaliaWork.new 
 
@@ -14,9 +14,9 @@ class AngaliaCLI
   #  ------------------------------------------------------------
   def cli()
     ANGALIA.setup_work()    # initialization of everything
-    Environ.put_message "\n\t#{ Environ.app_name }: A Drill Sergent for language learners.\n"
+    Environ.put_message "\n\t#{ Environ.app_name }: Remote Elder Monitoring Hub.\n"
 
-    do_work()      # do the work of çekimi
+    do_work()      # do the work of angalia
 
     ANGALIA.shutdown_work()
 
@@ -24,7 +24,7 @@ class AngaliaCLI
   end
 
   #  ------------------------------------------------------------
-  #  do_work  -- handles primary hocasi stuff
+  #  do_work  -- handles primary angalia stuff
   #  CLI usage only
   #  ------------------------------------------------------------
   def do_work()
@@ -48,35 +48,30 @@ class AngaliaCLI
       when  "v", "version"   then  ANGALIA.do_version   # print version
       when  "o", "options"   then  ANGALIA.do_options   # print options
 
+      when  "s", "start"     then  start_meet
+      when  "e", "end"       then  end_meet
+      when  "w", "webcam"    then  webcam
+      when  "c", "camctl"    then  camctl
+
       when  "x", "exit"      then  loop = false  # exit program
       when  "q", "quit"      then  loop = false  # exit program
 
       when  ""               then  loop = true   # empty line; NOP
+
       else     
-        fc_player( cmdlist )
+        Environ.log_warn( "unknown command" ) 
+
     end  # case
 
     return loop
     end
 
   #  ------------------------------------------------------------
-  #  fc_player -- cli player control i/f
   #  ------------------------------------------------------------
-  def fc_player( cmdlist )
-    player = ANGALIA.do_flashcards( cmdlist, nil ).start_card_player
-    
-    unless player.nil?
-      # player output ctl 
-      (loop, show) = player.commands( ["c"]  )
-
-      begin
-        Environ.put_data "\t" + show[0] unless show.empty?
-        Environ.put_prompt("\nPlayer > ")  
-        (loop, show) = player.commands( Environ.get_input_list )
-      end  while loop 
-
-    end  # player not nil
-   end
+    def start_meet()  ; return true; end
+    def end_meet()  ; return true; end
+    def webcam()  ; return true; end
+    def camctl()  ; return true; end
 
   #  ------------------------------------------------------------
   #  ------------------------------------------------------------

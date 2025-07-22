@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 #
-# Angalia: A Remote Elder Monitoring System Client
+# Angalia: A Remote Elder Monitoring Hub
 # Copyright (c) 2025 David S Anderson, All Rights Reserved
 #
 # main.rb -- starting point for linux CLI implementation
