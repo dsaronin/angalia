@@ -7,7 +7,6 @@
 
 class AngaliaWork
   require_relative 'environ'
-  require_relative 'flash_manager'
  
   #  ------------------------------------------------------------
   #  initialize  -- creates a new object
