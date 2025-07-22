@@ -1,0 +1,159 @@
+// sets a 'baseline' for all elements not dependent on browser defaults
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, i, a, blockquote, pre, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, dd, dl, dt, li, ol, ul, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td
+  margin: 0
+  padding: 0
+  border: 0
+  font-weight: inherit
+  font-style: inherit
+  font-size: inherit
+  font-family: inherit
+  line-height: 1
+  text-align: left
+  vertical-align: baseline
+
+a img, :link img, :visited img
+  border: 0
+
+table
+  border-collapse: collapse
+  border-spacing: 0
+
+ol, li
+  list-style: none
+
+q
+  &:before, &:after
+    content: ""
+
+blockquote
+  &:before, &:after
+    content: ""
+// ----------------------------
+html
+  box-sizing: border-box
+  -ms-text-size-adjust: 100%
+  -webkit-text-size-adjust: 100%
+
+*
+  box-sizing: inherit
+
+  &:before, &:after
+    box-sizing: inherit
+
+article, aside, details, figcaption, figure, footer, header, main, menu, nav, section
+  display: block
+
+summary
+  display: list-item
+
+audio, canvas, progress, video
+  display: inline-block
+
+progress
+  vertical-align: baseline
+
+audio:not([controls])
+  display: none
+  height: 0
+
+[hidden], template
+  display: none
+
+a
+  background-color: transparent
+  cursor: pointer
+
+  &:active, &:hover
+    outline-width: 0
+
+b, strong
+  font-weight: bolder
+
+sub, sup
+  font-size: 75%
+  line-height: 0
+  position: relative
+  vertical-align: baseline
+
+sub
+  bottom: -0.25em
+
+sup
+  top: -0.5em
+
+dfn
+  font-style: italic
+
+button, input
+  overflow: visible
+
+button, select
+  text-transform: none
+
+button, [type=button], [type=reset], [type=submit]
+  -webkit-appearance: button
+
+button::-moz-focus-inner, [type=button]::-moz-focus-inner, [type=reset]::-moz-focus-inner, [type=submit]::-moz-focus-inner
+  border-style: none
+  padding: 0
+
+button:-moz-focusring, [type=button]:-moz-focusring, [type=reset]:-moz-focusring, [type=submit]:-moz-focusring
+  outline: 1px dotted ButtonText
+
+button, input, select, textarea
+  font: inherit
+  margin: 0
+
+small
+  font-size: 80%
+
+figure
+  margin: 1em 2em
+
+hr
+  box-sizing: content-box
+  height: 0
+  overflow: visible
+
+[type=checkbox], [type=radio]
+  padding: 0
+
+[type=number]
+  &::-webkit-inner-spin-button, &::-webkit-outer-spin-button
+    height: auto
+
+[type=search]
+  -webkit-appearance: textfield
+  outline-offset: -2px
+
+  &::-webkit-search-decoration
+    -webkit-appearance: none
+
+\::-webkit-file-upload-button
+  -webkit-appearance: button
+  font: inherit
+
+.clearfix2:after
+  content: "&nbsp"
+  margin-bottom: 0px
+  display: block
+  height: 0
+  clear: both
+  visibility: hidden
+
+img
+  width: 100%
+  max-width: 100%
+  height: auto
+  border-style: none
+
+textarea
+  overflow: auto
+
+// responsive, viewport-based designation
+
+body
+  height: 100vh
+  width:  100vw
+
+

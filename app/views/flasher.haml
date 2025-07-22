@@ -1,0 +1,5 @@
+-# 
+- unless flash[:notice].nil? && flash[:error].nil?
+  #flash-message
+    %p
+      = ( "&diams;&nbsp;" + flash[:error].to_s + flash[:notice].to_s + "&nbsp;&diams;" )

@@ -1,0 +1,42 @@
+-# (c) 2023 David Anderson / Ders-Hocası, All rights reserved; 
+-# modifications, from whatever source, become IP of David Anderson
+-# 
+
+- @action_box ||= :action_box   # define partial to default if undefined
+
+!!! 1.1
+%html(xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en") 
+  %head
+    %meta(http-equiv="content-type" content="text/html;charset=UTF-8")
+    %meta(http-equiv="X-UA-Compatible" content="chrome=1")
+    %meta(name="google-site-verification" content="GabS43D6h2OysVqJsuKsq1pE7VJwaY9tMuC_fdehgRM")
+    %meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    %meta(name="description" content="Drills language students learners")
+    %meta(name="description" content="flashcards language tutor drill generator")
+    %meta(name="description" content="Türkiye Türk Dil öğrenin yardımcı eğitim uygulaması özel öğretmen ders koçu ")
+
+    %link(rel="stylesheet" href="/css/stylesheet.css")
+    %link(rel="icon" sizes="192x192" href="/images/favicon.ico?" type="image/x-icon")
+
+    %title DrillTutor&trade;
+
+  %body
+    .container{id: [@dark_background  ?  "darkbg"  :  "lightbg"]}
+
+      #header
+        = link_to( image_tag( "/images/flash-icon-2.png", {:class => 'logo',:alt => 'DrillTutor logo'} ) , '/', { :title => "main page" } )
+        %h3 DrillTutor
+      
+      #wrapper
+        #actionbox
+          = haml @action_box
+          = haml :flasher
+
+        #content
+          != yield
+        
+      #footer
+        %p
+          &copy;&nbsp;
+          =link_to("Copyright 2023 David S. Anderson, All rights reserved ","/about")
+          &emsp;&bull;&emsp;v 1.01 &ensp;
