@@ -17,7 +17,7 @@ configure do
   set :haml, { escape_html: false }
 
   Environ.log_info  "PUBLIC_DIR: #{PUBLIC_DIR}"
-  Environ.log_info  "configuring DersHocası"
+  Environ.log_info  "configuring Angalia application"
 
 end  # configure
 

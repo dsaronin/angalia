@@ -51,7 +51,6 @@ class AngaliaCLI
       when  "s", "start"     then  start_meet
       when  "e", "end"       then  end_meet
       when  "w", "webcam"    then  webcam
-      when  "c", "camctl"    then  camctl
 
       when  "x", "exit"      then  loop = false  # exit program
       when  "q", "quit"      then  loop = false  # exit program
@@ -68,10 +67,6 @@ class AngaliaCLI
 
   #  ------------------------------------------------------------
   #  ------------------------------------------------------------
-    def start_meet()  ; return true; end
-    def end_meet()  ; return true; end
-    def webcam()  ; return true; end
-    def camctl()  ; return true; end
 
   #  ------------------------------------------------------------
   #  ------------------------------------------------------------

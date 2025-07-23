@@ -11,6 +11,7 @@
   require_relative 'ansicolor'
   require 'singleton'
   require_relative 'flags'
+  
 #----------------------------------------------------------
 
 class Environ
@@ -19,11 +20,14 @@ class Environ
 # constants ... #TODO replace with config file?
   APP_NAME = "Angalia"
   APP_NAME_HEAD = APP_NAME + ": "
-  ANGALIA_VERSION = "0.03"
+  ANGALIA_VERSION = "0.04"
   ANGALIA_HELP = "flags (f), options (o), help (h), version (v), quit (q), exit (x)" +
     "start meet (s), end meet (e), webcam (w), camctl (c)"
   #  ------------------------------------------------------------
   EXIT_CMD  = "q"  # default CLI exit command used if EOF
+  #  ------------------------------------------------------------
+  MY_MONITOR_DISPLAY_NAME = "HDMI-A-0" # Default/initial monitor name
+  
   #  ------------------------------------------------------------
  
 # initialize the class-level instance variables
@@ -128,16 +132,12 @@ class Environ
   #  ------------------------------------------------------------
   #  ------------------------------------------------------------
 
+  # ------------------------------------------------------------
+  # my_monitor_default -- Returns default monitor display name
+  # ------------------------------------------------------------
+  def self.my_monitor_default
+     return MY_MONITOR_DISPLAY_NAME
+  end
+
 end  # Class Environ
-
-class MajorError < StandardError
-  def initialize(msg="Something not found")
-    super(msg)
-  end
-end
-
-class MinorError < StandardError
-  def initialize(msg="Something not done")
-    super(msg)
-  end
-end
+  
