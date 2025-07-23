@@ -50,6 +50,8 @@ class MeetView
 
   # ------------------------------------------------------------
   # start_session -- Launches Flatpak Chromium in kiosk mode for Jitsi Meet.
+  # If Environ::DEBUG_MODE is true, it does not use --kiosk.
+  # Uses a dedicated user data directory to avoid profile selection.
   # Returns:
   #   true:  if session started successfully
   #   false: if session failed to start
@@ -74,7 +76,11 @@ class MeetView
       command_parts << "--autoplay-policy=no-user-gesture-required"
       # command_parts << "--use-fake-ui-for-media-stream"
       command_parts << "--disable-gpu"
-      command_parts << jitsi_room_url
+      # command_parts << "--disable-session-crashed-bubble" # Added to suppress restore prompt
+      command_parts << "--no-first-run" # Suppress first-run wizard
+      command_parts << "--user-data-dir=#{Environ::CHROMIUM_USER_DATA_DIR}" # Use dedicated profile
+      # command_parts << jitsi_room_url
+      command_parts << "--app=#{jitsi_room_url}" # Use --app flag to launch as an application      
 
       # Join parts into a single command string
       command = command_parts.join(" ")

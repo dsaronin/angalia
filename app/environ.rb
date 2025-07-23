@@ -30,7 +30,8 @@ class Environ
   #  ------------------------------------------------------------
   MY_MONITOR_DISPLAY_NAME  = "HDMI-A-0" # Default/initial monitor name
   DEV_MONITOR_DISPLAY_NAME = "HDMI-A-0" # Dev monitor name
-  MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia"
+  MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia#config.prejoinPageEnabled=false"
+  CHROMIUM_USER_DATA_DIR = File.expand_path("~/.angalia/chromium_profile")
   #  ------------------------------------------------------------
  
 # initialize the class-level instance variables
