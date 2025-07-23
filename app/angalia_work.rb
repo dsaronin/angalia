@@ -11,6 +11,7 @@ class AngaliaWork
   require_relative 'webcam' # Required for Webcam Singleton
   require_relative 'monitor' # Required for Monitor Singleton
   require_relative 'meet_view' # Required for MeetView Singleton
+  require_relative 'openvpn' # Required for OpenVPN Singleton
   require_relative 'angalia_error' # Required for AngaliaError classes
 
   # ------------------------------------------------------------
@@ -31,6 +32,7 @@ class AngaliaWork
       @my_monitor   = Monitor.instance
       @my_webcam    = Webcam.instance
       @my_meet_view = MeetView.instance
+      @my_openvpn   = OpenVPN.instance # Instantiate OpenVPN Singleton
 
       Environ.log_info("AngaliaWork: All device configurations verified successfully.")
       # Environ.put_info FlashManager.show_defaults

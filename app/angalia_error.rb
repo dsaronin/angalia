@@ -58,6 +58,13 @@ class AngaliaError < StandardError
     end
   end
 
+  # Specific error for OpenVPN configuration or connection issues.
+  class OpenVPNError < MajorError
+    def initialize(msg = "OpenVPN connection or configuration failed.")
+      super(msg)
+    end
+  end
+
   # More granular operational errors can be defined here, inheriting from MinorError
   # For example:
   # class OperationError < MinorError
