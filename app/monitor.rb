@@ -13,7 +13,6 @@ class Monitor
 
   def initialize
     @is_on = false
-    @display_name = nil # Initialize as nil, will be set in verify_configuration
     verify_configuration # Perform configuration check on initialization
   end
 

@@ -1,3 +1,4 @@
+# --- angalia_work.rb ---
 # Angalia: A Remote Elder Monitoring Hub
 # Copyright (c) 2025 David S Anderson, All Rights Reserved
 #
@@ -7,97 +8,109 @@
 
 class AngaliaWork
   require_relative 'environ'
-  require_relative 'angalia_error'
   require_relative 'webcam' # Required for Webcam Singleton
   require_relative 'monitor' # Required for Monitor Singleton
   require_relative 'meet_view' # Required for MeetView Singleton
- 
-  #  ------------------------------------------------------------
-  #  initialize  -- creates a new object
-  #  ------------------------------------------------------------
+  require_relative 'angalia_error' # Required for AngaliaError classes
+
+  # ------------------------------------------------------------
+  # initialize -- creates a new AngaliaWork object; inits environ
+  # ------------------------------------------------------------
   def initialize()
-    @my_env    = Environ.instance   # currently not used anywhere
-    @my_monitor   = Monitor.instance  
-    @my_webcam    = Webcam.instance  
-    @my_meet_view = MeetView.instance  
+    @my_env = Environ.instance # @my_env not used; placeholder
   end
 
-  #  ------------------------------------------------------------
-  #  setup_work  -- handles initializing angalia system
-  #  ------------------------------------------------------------
+  # ------------------------------------------------------------
+  # setup_work -- handles initializing angalia system
+  # This is the primary point for all critical device configurations.
+  # ------------------------------------------------------------
   def setup_work()
-    Environ.log_info( "starting..." )
-    # Environ.put_info FlashManager.show_defaults
+    Environ.log_info("Starting ...")
+    begin
+      # Instantiate Singletons here. Their initialize methods will call verify_configuration.
+      @my_monitor   = Monitor.instance
+      @my_webcam    = Webcam.instance
+      @my_meet_view = MeetView.instance
+
+      Environ.log_info("AngaliaWork: All device configurations verified successfully.")
+      # Environ.put_info FlashManager.show_defaults
+    rescue AngaliaError::MajorError => e
+      Environ.put_and_log_error("AngaliaWork: Critical startup error: #{e.message}")
+      # Re-raise the error to the top-level CLI or web server
+      # to prevent the application from running in a broken state.
+      raise
+    rescue => e
+      Environ.put_and_log_error("AngaliaWork: An unexpected error occurred during setup: #{e.message}")
+      raise # Re-raise any other unexpected errors
+    end
+  end # setup_work
+
+  # ------------------------------------------------------------
+  # shutdown_work -- handles pre-termination stuff
+  # ------------------------------------------------------------
+  def shutdown_work()
+    Environ.log_info("...ending")
   end
 
-  #  ------------------------------------------------------------
-  #  shutdown_work  -- handles pre-termination stuff
-  #  ------------------------------------------------------------
-  def shutdown_work()
-    Environ.log_info( "...ending" )
-  end
- 
-  #  ------------------------------------------------------------
-  #  do_status  -- display list of all angalia rules
-  #  ------------------------------------------------------------
+  # ------------------------------------------------------------
+  # do_status -- displays then returns status
+  # ------------------------------------------------------------
   def do_status
     sts = ""
-    Environ.put_info ">>>>> status:  " + sts
+    Environ.put_info ">>>>> status: " + sts
     return sts
   end
 
-  #  ------------------------------------------------------------
-  #  do_flags  -- display flag states
-  #  args:
-  #    list  -- cli array, with cmd at top
-  #  ------------------------------------------------------------
+  # ------------------------------------------------------------
+  # do_flags -- displays then returns flag states
+  # args:
+  #   list -- cli array, with cmd at top
+  # ------------------------------------------------------------
   def do_flags(list)
-    list.shift  # pop first element, the "f" command
-    if ( Environ.flags.parse_flags( list ) )
-      Environ.change_log_level( Environ.flags.flag_log_level )
+    list.shift # pop first element, the "f" command
+    if (Environ.flags.parse_flags(list))
+      Environ.change_log_level(Environ.flags.flag_log_level)
     end
 
     sts = Environ.flags.to_s
-    Environ.put_info ">>>>>  flags: " + sts
+    Environ.put_info ">>>>> flags: " + sts
     return sts
   end
 
-  #  ------------------------------------------------------------
-  #  do_help  -- display help line
-  #  ------------------------------------------------------------
+  # ------------------------------------------------------------
+  # do_help -- displays then returns help line
+  # ------------------------------------------------------------
   def do_help
-    sts = Environ.angalia_help + "\n" + Environ.flags.to_help 
+    sts = Environ.angalia_help + "\n" + Environ.flags.to_help
     Environ.put_info sts
     return sts
   end
 
-  #  ------------------------------------------------------------
-  #  do_version  -- display angalia version
-  #  ------------------------------------------------------------
-  def do_version        
+  # ------------------------------------------------------------
+  # do_version -- displays then returns angalia version
+  # ------------------------------------------------------------
+  def do_version
     sts = Environ.app_name + " v" + Environ.angalia_version
-    Environ.put_info sts  
+    Environ.put_info sts
     return sts
   end
 
-  #  ------------------------------------------------------------
-  #  do_options  -- display any options
-  #  ------------------------------------------------------------
-  def do_options        
+  # ------------------------------------------------------------
+  # do_options -- display any options
+  # ------------------------------------------------------------
+  def do_options
     sts = ">>>>> options "
-    Environ.put_info  sts  
+    Environ.put_info sts
     return sts
   end
- 
-  #  ------------------------------------------------------------
-  #  ------ Angalia specific handling ---------------------------
-  #  ------------------------------------------------------------
 
   # ------------------------------------------------------------
   # start_meet -- Initiates a Jitsi Meet session
+  #   true:  show success
+  #   false: shows failure
   # ------------------------------------------------------------
   def start_meet
-    Environ.log_info("Attempting to start Jitsi Meet session.")
+    Environ.log_info("Attempting Jitsi Meet session...")
     begin
       @my_webcam.stop_stream  # Stop the webcam stream.
       @my_monitor.turn_on   # Turn on the monitor.
@@ -105,20 +118,19 @@ class AngaliaWork
       # Start the Jitsi Meet session in Chromium
       @my_meet_view.start_session(Environ.jitsi_meet_room_url)
 
-      Environ.log_info("Jitsi Meet session initiation sequence completed.")
+      Environ.log_info("Meet session initiation completed.")
       return true # Indicate success
 
-    rescue AngaliaError::MajorError => e # Catch specific major configuration/device errors
-      Environ.put_and_log_error("Failed to start meet: #{e.message}")
+    rescue AngaliaError::MajorError => e
+      Environ.put_and_log_error(e.message) # Simplified message
       return false
-    rescue AngaliaError::MinorError => e # Catch specific minor operational errors
-      Environ.put_and_log_error("Issues when start meet: #{e.message}")
+    rescue AngaliaError::MinorError => e
+      Environ.put_and_log_error(e.message) # Simplified message
       return false
-    rescue => e # Catch any other unexpected errors
+    rescue => e
       Environ.put_and_log_error("An unexpected error occurred during start_meet: #{e.message}")
       return false
     end
-
   end   # start_meet
 
   # ------------------------------------------------------------
@@ -140,9 +152,8 @@ class AngaliaWork
     return true
   end
 
- 
-  #  ------------------------------------------------------------
-  #  ------------------------------------------------------------
+  # ------------------------------------------------------------
+  # ------------------------------------------------------------
 
-end  # class AngaliaWork
+end # class AngaliaWork
 

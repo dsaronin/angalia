@@ -10,7 +10,7 @@ class AngaliaCLI
     ANGALIA = AngaliaWork.new 
 
   #  ------------------------------------------------------------
-  #  cli  -- #  CLI entry point
+  #  cli  -- #  CLI entry point  <==== kicks off command loop
   #  ------------------------------------------------------------
   def cli()
     ANGALIA.setup_work()    # initialization of everything

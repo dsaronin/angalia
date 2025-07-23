@@ -20,7 +20,7 @@ class Environ
 # constants ... #TODO replace with config file?
   APP_NAME = "Angalia"
   APP_NAME_HEAD = APP_NAME + ": "
-  ANGALIA_VERSION = "0.04"
+  ANGALIA_VERSION = "0.05"
   ANGALIA_HELP = "flags (f), options (o), help (h), version (v), quit (q), exit (x)" +
     "start meet (s), end meet (e), webcam (w), camctl (c)"
   #  ------------------------------------------------------------

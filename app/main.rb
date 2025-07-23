@@ -13,5 +13,5 @@
 
   require_relative 'angalia_cli'
 
-  exit AngaliaCLI.new.cli
+  exit AngaliaCLI.new.cli   # <-- cli() is the entry point
 
