@@ -48,9 +48,9 @@ class AngaliaCLI
       when  "v", "version"   then  ANGALIA.do_version   # print version
       when  "o", "options"   then  ANGALIA.do_options   # print options
 
-      when  "s", "start"     then  start_meet
-      when  "e", "end"       then  end_meet
-      when  "w", "webcam"    then  webcam
+      when  "s", "start"     then  ANGALIA.start_meet  # start Jitsi-meeting
+      when  "e", "end"       then  ANGALIA.end_meet  # end Jitsi-meeting
+      when  "w", "webcam"    then  ANGALIA.webcam    # start webcam feed
 
       when  "x", "exit"      then  loop = false  # exit program
       when  "q", "quit"      then  loop = false  # exit program

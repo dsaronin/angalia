@@ -22,12 +22,12 @@ class Environ
   APP_NAME_HEAD = APP_NAME + ": "
   ANGALIA_VERSION = "0.05"
   ANGALIA_HELP = "flags (f), options (o), help (h), version (v), quit (q), exit (x)" +
-    "start meet (s), end meet (e), webcam (w), camctl (c)"
+    "start meet (s), end meet (e), webcam (w)"
   #  ------------------------------------------------------------
   EXIT_CMD  = "q"  # default CLI exit command used if EOF
   #  ------------------------------------------------------------
   MY_MONITOR_DISPLAY_NAME = "HDMI-A-0" # Default/initial monitor name
-  
+  MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia"
   #  ------------------------------------------------------------
  
 # initialize the class-level instance variables
@@ -131,6 +131,10 @@ class Environ
   
   #  ------------------------------------------------------------
   #  ------------------------------------------------------------
+  def self.jitsi_meet_room_url
+    return MY_JITSI_MEET_ROOM
+  end
+
 
   # ------------------------------------------------------------
   # my_monitor_default -- Returns default monitor display name
@@ -139,5 +143,7 @@ class Environ
      return MY_MONITOR_DISPLAY_NAME
   end
 
+  #  ------------------------------------------------------------
+  #  ------------------------------------------------------------
 end  # Class Environ
   
