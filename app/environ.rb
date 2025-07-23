@@ -26,6 +26,8 @@ class Environ
   #  ------------------------------------------------------------
   EXIT_CMD  = "q"  # default CLI exit command used if EOF
   #  ------------------------------------------------------------
+  DEBUG_MODE = true
+  #  ------------------------------------------------------------
   MY_MONITOR_DISPLAY_NAME  = "HDMI-A-0" # Default/initial monitor name
   DEV_MONITOR_DISPLAY_NAME = "HDMI-A-0" # Dev monitor name
   MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia"
