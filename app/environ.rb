@@ -11,6 +11,7 @@
   require_relative 'ansicolor'
   require 'singleton'
   require_relative 'flags'
+  require_relative 'version'
   
 #----------------------------------------------------------
 
@@ -20,7 +21,6 @@ class Environ
 # constants ... #TODO replace with config file?
   APP_NAME = "Angalia"
   APP_NAME_HEAD = APP_NAME + ": "
-  ANGALIA_VERSION = "0.06"
   ANGALIA_HELP = "flags (f), options (o), help (h), version (v), quit (q), exit (x)" +
     "start meet (s), end meet (e), webcam (w)"
   #  ------------------------------------------------------------
@@ -31,7 +31,7 @@ class Environ
   #  ------------------------------------------------------------
  
 # initialize the class-level instance variables
-  @angalia_version = ANGALIA_VERSION
+  @angalia_version = Angalia::VERSION
   @app_name = APP_NAME 
   @app_name_head = APP_NAME_HEAD 
   @angalia_help = ANGALIA_HELP 
