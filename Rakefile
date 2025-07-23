@@ -31,7 +31,7 @@ task :release, [:msg] do |t, args|
   version = File.read(VERSION_FILE).match(/VERSION = "(\d+\.\d+)"/)[1]
 
   # Construct the commit message
-  commit_message = "#{version}"
+  commit_message = "v#{version}"
   commit_message += " - #{args[:msg]}" if args[:msg] && !args[:msg].empty?
 
   # Execute Git commands
