@@ -23,25 +23,40 @@ class Monitor
   # from get_my_monitor to propagate to verify_configuration.
   # ------------------------------------------------------------
   def set_display_name_with_fallback
-    Environ.log_info("Monitor: Setting display name with fallback.")
+    Environ.log_info("Monitor: Setting display name...")
+    connected_monitors = []
     begin
-      # Attempt dynamic discovery
-      discovered_name = get_my_monitor()
-      if discovered_name && !discovered_name.empty?
-        @display_name = discovered_name
-        Environ.log_info("Monitor: Display name set to: #{@display_name}.")
-      else
-        # Fallback to default if dynamic discovery returns empty or nil
-        @display_name = Environ.my_monitor_default
-        Environ.log_warn("Monitor: Dynamic discovery failed or returned empty. Using default: #{@display_name}.")
-      end
-    rescue AngaliaError::MonitorError => e # Catch specific error from get_my_monitor
-      Environ.log_warn("Monitor: Dynamic discovery failed: #{e.message}. Using default: #{Environ.my_monitor_default}")
-      @display_name = Environ.my_monitor_default # Fallback to default on error
-    rescue => e # Catch any other unexpected errors during discovery
-      Environ.log_warn("Monitor: Unexpected error during dynamic discovery: #{e.message}. Using default: #{Environ.my_monitor_default}")
-      @display_name = Environ.my_monitor_default # Fallback to default on unexpected error
-    end  # rescue block
+      connected_monitors = get_my_monitor() # This now returns an array
+
+    rescue AngaliaError::MonitorError => e
+      Environ.log_warn("Monitor: Dynamic discovery of monitors failed: #{e.message}. Will attempt to use default or fallback logic.")
+      # connected_monitors remains empty, which will lead to using the default
+    rescue => e
+      Environ.log_warn("Monitor: Unexpected error during monitor discovery: #{e.message}. Will attempt to use default or fallback logic.")
+      # connected_monitors remains empty
+    end
+
+    if connected_monitors.empty?
+      @display_name = Environ.my_monitor_default
+      Environ.log_warn("Monitor: No connected monitors found or discovery failed. Using default: #{@display_name}.")
+    elsif connected_monitors.first != Environ::DEV_MONITOR_DISPLAY_NAME
+      @display_name = connected_monitors.first
+      Environ.log_info("Monitor: Using primary connected monitor (not dev monitor): #{@display_name}.")
+    elsif connected_monitors.size > 1
+      @display_name = connected_monitors[1] # Use the second monitor
+      Environ.log_info("Monitor: Primary is dev monitor; using second connected monitor: #{@display_name}.")
+    else
+      @display_name = connected_monitors.first # Only one monitor, and it's the dev monitor
+      Environ.log_warn("Monitor: Only one connected monitor found, and it's the dev monitor. Using: #{@display_name}.")
+    end
+
+    # Final check to ensure a display name was set
+    if @display_name.nil? || @display_name.empty?
+      @display_name = Environ.my_monitor_default
+      Environ.log_error("Monitor: Could not determine a suitable display name. Falling back to hardcoded default: #{@display_name}.")
+    end
+
+    Environ.log_info("Monitor: Final selected display name: #{@display_name}.")
   end # set_display_name_with_fallback
 
   # ------------------------------------------------------------
@@ -68,30 +83,42 @@ class Monitor
     end
   end # verify_configuration
 
-
+# ------------------------------------------------------------
+# get_my_monitor -- Discovers all connected monitor display names via xrandr.
+# Returns:
+#   Array<String>: An array of connected monitor names (e.g., ["HDMI-A-0", "DP-1"]).
+# Raises:
+#   AngaliaError::MonitorError: If xrandr command fails or finds no connected monitors.
+# ------------------------------------------------------------
   def get_my_monitor()
-    Environ.log_info("Monitor: Attempting to discover monitor display name via xrandr.")
+    Environ.log_info("Monitor: Attempting to discover all connected monitor display names via xrandr.")
     begin
       # Use backticks to execute the command and capture its output
+      # This will return multiple lines if multiple monitors are connected
       output = `xrandr | grep " connected" | cut -d " " -f1`.strip
+
       if output.empty?
-        Environ.log_warn("Monitor: xrandr found no connected monitor.")
-        raise AngaliaError::MonitorError.new("No connected monitor found via xrandr.")
+        Environ.log_warn("Monitor: xrandr found no connected monitors.")
+        raise AngaliaError::MonitorError.new("No connected monitors found via xrandr.")
       else
-        Environ.log_info("Monitor: Discovered display name: #{output}")
-        return output
+        # Split the output by newline to get an array of monitor names
+        monitor_names = output.split("\n").map(&:strip).reject(&:empty?)
+        Environ.log_info("Monitor: Discovered connected display names: #{monitor_names.join(', ')}")
+        return monitor_names
       end
+
     rescue => e # Catch any error from system command execution
       Environ.log_error("Monitor: Error executing xrandr command: #{e.message}")
       raise AngaliaError::MonitorError.new("Error executing xrandr command for monitor discovery: #{e.message}") # Wrap and re-raise
     end
+
   end # get_my_monitor
+
 
   def turn_on
     Environ.log_info("Monitor: Turning on display.")
     begin
-      # TODO: success = system("xrandr --output #{@display_name} --auto") or system("xset dpms force on")
-      success = true # Simulate successful command execution
+      success = system("xrandr --output #{@display_name} --auto")
 
       unless success
         raise AngaliaError::MonitorOperationError.new("Failed to turn on monitor.")
@@ -112,8 +139,7 @@ class Monitor
   def turn_off
     Environ.log_info("Monitor: Turning off display.")
     begin
-      # TODO: success = system("xrandr --output #{@display_name} --off") or system("xset dpms force off")
-      success = true # Simulate successful command execution
+      success = system("xrandr --output #{@display_name} --off")
 
       unless success
         raise AngaliaError::MonitorOperationError.new("Failed to turn off monitor.")

@@ -137,14 +137,27 @@ class AngaliaWork
 
   # ------------------------------------------------------------
   # end_meet -- Terminates a Jitsi Meet session (placeholder for future)
+  # Returns:
+  #   true:  show success
+  #   false: shows failure
   # ------------------------------------------------------------
   def end_meet
-    Environ.log_info("Attempting to end Jitsi Meet session (TODO: implement).")
-    # TODO: Implement @my_meet_view.stop_session and @my_monitor.turn_off
-    # TODO: Potentially restart @my_webcam.start_stream for always-on
-    return true
-  end
+    Environ.log_info("Attempting to end Jitsi Meet session.")
+    begin
+      @my_meet_view.stop_session # Stop the Jitsi Meet session
+      @my_monitor.turn_off     # Turn off the monitor
+      @my_webcam.start_stream  # Restart the always-on webcam stream
 
+      Environ.log_info("Jitsi Meet session termination sequence completed.")
+      return true # Indicate success
+    rescue AngaliaError::MinorError => e
+      Environ.put_and_log_error(e.message) # Simplified message
+      return false
+    rescue => e
+      Environ.put_and_log_error("An unexpected error occurred during end_meet: #{e.message}")
+      return false
+    end
+  end # end_meet
   # ------------------------------------------------------------
   # webcam -- Handles webcam specific commands (placeholder for future)
   # ------------------------------------------------------------
