@@ -148,6 +148,9 @@ class AngaliaWork
       @my_meet_view.stop_session # Stop the Jitsi Meet session
       @my_monitor.turn_off     # Turn off the monitor
       @my_webcam.start_stream  # Restart the always-on webcam stream
+      
+         # disconnect the vpn when we're debugging system
+      @my_openvpn.disconnect_vpn_tunnel if Environ::DEBUG_MODE
 
       Environ.log_info("Jitsi Meet session termination sequence completed.")
       return true # Indicate success

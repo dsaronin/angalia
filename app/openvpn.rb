@@ -78,7 +78,7 @@ class OpenVPN
   #   boolean: true if the tunnel process is found, false otherwise.
   # ------------------------------------------------------------
   def tunnel_connected?
-    command = "nmcli connection show #{Environ::ANGALIA_VPN_CLIENT} | grep \"vpn.*connected\" > /dev/null 2>&1"
+    command = "nmcli connection show #{Environ::ANGALIA_VPN_CLIENT} | grep -i 'vpn connected' > /dev/null 2>&1"
     return system(command)
   end # vpn_connected?
 
@@ -98,6 +98,14 @@ class OpenVPN
     return state
 
   end # connect_vpn_tunnel
+
+  # ------------------------------------------------------------
+  # disconnect_vpn_tunnel -- Disconnects the OpenVPN tunnel.
+  # ------------------------------------------------------------
+  def disconnect_vpn_tunnel
+    command = "nmcli connection down #{Environ::ANGALIA_VPN_CLIENT}"
+    system(command) if tunnel_connected?
+  end # disconnect_tunnel
 
   # ------------------------------------------------------------
   # ------------------------------------------------------------
