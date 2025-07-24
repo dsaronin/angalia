@@ -162,13 +162,19 @@ class AngaliaWork
       return false
     end
   end # end_meet
+
   # ------------------------------------------------------------
-  # webcam -- Handles webcam specific commands (placeholder for future)
+  # webcam_on -- starts webcam streaming
   # ------------------------------------------------------------
-  def webcam
-    Environ.log_info("Webcam command received (TODO: implement).")
-    # TODO: Implement logic for webcam control, e.g., starting/stopping the always-on stream
-    return true
+  def webcam_on
+    @my_webcam.start_stream
+  end
+
+  # ------------------------------------------------------------
+  # webcam_off -- stops webcam streaming
+  # ------------------------------------------------------------
+  def webcam_off
+    @my_webcam.stop_stream
   end
 
   # ------------------------------------------------------------

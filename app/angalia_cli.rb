@@ -50,7 +50,9 @@ class AngaliaCLI
 
       when  "s", "start"     then  ANGALIA.start_meet  # start Jitsi-meeting
       when  "e", "end"       then  ANGALIA.end_meet  # end Jitsi-meeting
-      when  "w", "webcam"    then  ANGALIA.webcam    # start webcam feed
+      when  "wo", "webcamon"     then  ANGALIA.webcam_on    # start webcam feed
+      when  "wf", "webcamoff"    then  ANGALIA.webcam_off   # stop webcam feed
+
 
       when  "x", "exit"      then  loop = false  # exit program
       when  "q", "quit"      then  loop = false  # exit program
