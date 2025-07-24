@@ -114,6 +114,7 @@ class AngaliaWork
   def start_meet
     Environ.log_info("Attempting Jitsi Meet session...")
     begin
+      @my_openvpn.start_vpn   # make sure vpn has started
       @my_webcam.stop_stream  # Stop the webcam stream.
       @my_monitor.turn_on   # Turn on the monitor.
 

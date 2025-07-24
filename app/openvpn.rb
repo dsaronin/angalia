@@ -3,51 +3,102 @@
 # Copyright (c) 2025 David S Anderson, All Rights Reserved
 
 require 'singleton'
-require_relative 'environ' # Required for Environ.log_info
+require_relative 'environ' # Required for Environ.log_info, Environ::OPENVPN_CLIENT_CONFIG_PATH, Environ::VPN_RETRY_COUNT
 require_relative 'angalia_error' # Required for AngaliaError::OpenVPNError
 
 class OpenVPN
   include Singleton
 
   def initialize
-    verify_configuration   #  handle the initial check and connection.
+    verify_configuration(false) # make sure client vpn service started
+    # NOTE: does NOT establish vpn tunnel here.
   end
 
   # ------------------------------------------------------------
-  # verify_configuration -- Checks OpenVPN connection status and attempts to activate.
+  # verify_configuration -- Ensures the OpenVPN service is running
+  # args:
+  #   connect -- true if verify_configuration should also connect the tunnel
+  # This is the primary entry point for OpenVPN setup.
+  # Attempts to start the OpenVPN client systemd service.
   # Raises AngaliaError::OpenVPNError if the connection cannot be established or verified.
   # ------------------------------------------------------------
-  def verify_configuration
-    Environ.log_info("OpenVPN: Verifying connection and activating if necessary.")
+  def verify_configuration( connect )
     begin
-      # TODO: Replace with actual system calls to check VPN status and connect.
-      # Example: Check `systemctl is-active openvpn@client` or parse `ip a` output for tun0.
-      # If not active, attempt `sudo systemctl start openvpn@client` or similar.
-      # For now, simulate success:
-      vpn_active = true # Simulate successful VPN connection
-
-      unless vpn_active
-        Environ.log_error("OpenVPN: Connection not active. Attempting to start...")
-        # TODO: Add actual command to start VPN, e.g., success = system("sudo systemctl start openvpn@client")
-        # For now, simulate success:
-        connection_attempt_successful = true # Simulate successful connection attempt
-
-        unless connection_attempt_successful
-          raise AngaliaError::OpenVPNError.new("Failed to establish OpenVPN connection.")
-        end
+      unless system("systemctl is-active NetworkManager.service > /dev/null 2>&1")
+        raise AngaliaError::OpenVPNError.new("NetworkManager.service is not active. nmcli commands will not work.")
       end
-      Environ.log_info("OpenVPN: Connection verified successfully.")
+      Environ.log_info("OpenVPN: Verified NetworkManager.service running.")
+
+      unless !connect  # try to connect if requested
+        if connect_vpn_tunnel  # try establish tunnel
+          # SUCCESS IS HERE
+          Environ.log_info("OpenVPN: Angalia vpn tunnel connected.")
+        else  # FAILURE IS HERE
+          Environ.log_error("OpenVPN: Angalia vpn tunnel does NOT connect.")
+          raise AngaliaError::OpenVPNError.new("Angalia vpn tunnel does NOT connect.")
+        end
+      end   #  unless connection try
+
+      # rescue block =========================================================
     rescue AngaliaError::OpenVPNError => e
-      Environ.log_fatal("OpenVPN: Configuration/Connection error: #{e.message}")
-      raise # Re-raise for AngaliaWork to handle as a MajorError
+      raise
     rescue => e
-      Environ.log_fatal("OpenVPN: Unexpected error during connection verification: #{e.message}")
-      raise AngaliaError::OpenVPNError.new("Unexpected error during OpenVPN verification: #{e.message}") # Wrap unexpected errors
+      msg = "OpenVPN: Unexpected error during service start: #{e.message}"
+      Environ.log_error(msg)
+      raise AngaliaError::OpenVPNError.new(msg)
     end
+      # end rescue block ======================================================
   end # verify_configuration
 
   # ------------------------------------------------------------
+  #  start_vpn -- verifies services, connects tunnel
+  #  this will be the entry point each time that a MEETING is started
+  # Raises AngaliaError::OpenVPNError if the connection cannot be established or verified.
+  # Raises AngaliaError::OpenVPNError if tunnel fails
   # ------------------------------------------------------------
+  def start_vpn
+    verify_configuration( true )  
+  end
 
-end # Class OpenVPN
+  # ------------------------------------------------------------
+  # establish_tunnel -- Executes the OpenVPN client command to try and bring up the tunnel.
+  # This method assumes it might be called with sudo privileges.
+  # It does NOT verify the tunnel's active state; that's done by vpn_connected?.
+  # Returns:
+  #   boolean: true if the command was successfully executed, false otherwise.
+  # ------------------------------------------------------------
+  def establish_tunnel
+    command = "nmcli connection up #{Environ::ANGALIA_VPN_CLIENT}"
+    return system(command)
+  end # establish_tunnel
+
+  # ------------------------------------------------------------
+  # vpn_connected? -- Checks if the OpenVPN tunnel is active.
+  # Returns:
+  #   boolean: true if the tunnel process is found, false otherwise.
+  # ------------------------------------------------------------
+  def tunnel_connected?
+    command = "nmcli connection show #{Environ::ANGALIA_VPN_CLIENT} | grep \"vpn.*connected\" > /dev/null 2>&1"
+    return system(command)
+  end # vpn_connected?
+
+  # ------------------------------------------------------------
+  # connect_vpn_tunnel -- Attempts to connect the VPN tunnel with retries.
+  # Assumes OpenVPNclient service is running.
+  # returns: state of tunnel_connected?  t if connected
+  # ------------------------------------------------------------
+  def connect_vpn_tunnel
+    countdown = Environ::VPN_RETRY_COUNT
+
+    while ( !(state = tunnel_connected?) && countdown-- > 0 )
+      establish_tunnel # Start the tunnel
+      sleep Environ::VPN_SLEEP_COUNT  # wait for VPN tunnel
+    end  # while establishing tunnel
+
+    return state
+
+  end # connect_vpn_tunnel
+
+  # ------------------------------------------------------------
+  # ------------------------------------------------------------
 

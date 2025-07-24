@@ -28,10 +28,18 @@ class Environ
   #  ------------------------------------------------------------
   DEBUG_MODE = true
   #  ------------------------------------------------------------
+  #  GLOBAL CONSTANTS
+  #  ------------------------------------------------------------
+
   MY_MONITOR_DISPLAY_NAME  = "HDMI-A-0" # Default/initial monitor name
   DEV_MONITOR_DISPLAY_NAME = "HDMI-A-0" # Dev monitor name
   MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia#config.prejoinPageEnabled=false"
   CHROMIUM_USER_DATA_DIR = File.expand_path("~/.angalia/chromium_profile")
+  ANGALIA_VPN_CLIENT = "malagarasi-client"
+  OPENVPN_CLIENT_CONFIG_PATH = "/home/daudi/certs/malagarasi-client.ovpn"
+  VPN_RETRY_COUNT = 3 # Example: Retry 3 times
+  VPN_SLEEP_COUNT = 5 # value for sleep before checking
+
   #  ------------------------------------------------------------
  
 # initialize the class-level instance variables
