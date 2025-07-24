@@ -90,7 +90,7 @@ class OpenVPN
   def connect_vpn_tunnel
     countdown = Environ::VPN_RETRY_COUNT
 
-    while ( !(state = tunnel_connected?) && countdown-- > 0 )
+    while ( !(state = tunnel_connected?) && (countdown -= 1) >=0 )
       establish_tunnel # Start the tunnel
       sleep Environ::VPN_SLEEP_COUNT  # wait for VPN tunnel
     end  # while establishing tunnel
@@ -101,4 +101,4 @@ class OpenVPN
 
   # ------------------------------------------------------------
   # ------------------------------------------------------------
-
+end  # Class OpenVPN
