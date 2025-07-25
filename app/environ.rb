@@ -22,7 +22,7 @@ class Environ
   APP_NAME = "Angalia"
   APP_NAME_HEAD = APP_NAME + ": "
   ANGALIA_HELP = "flags (f), options (o), help (h), version (v), quit (q), exit (x)" +
-    "start meet (s), end meet (e), webcam (w)"
+    "start meet (s), end meet (e), webcamon (wo), webcamoff (wf), showpipe (sp), showsframe (sf)"
   #  ------------------------------------------------------------
   EXIT_CMD  = "q"  # default CLI exit command used if EOF
   #  ------------------------------------------------------------
@@ -41,6 +41,8 @@ class Environ
   VPN_RETRY_COUNT = 3 # Example: Retry 3 times
   VPN_SLEEP_COUNT = 5 # value for sleep before checking
   WEBCAM_PIPE = "CAMOUT"
+  WEBCAM_PIPE_PATH = "/dev/#{MY_WEBCAM_NAME}"
+
   #  ------------------------------------------------------------
  
 # initialize the class-level instance variables

@@ -53,6 +53,8 @@ class AngaliaCLI
       when  "wo", "webcamon"     then  ANGALIA.webcam_on    # start webcam feed
       when  "wf", "webcamoff"    then  ANGALIA.webcam_off   # stop webcam feed
 
+      when  "sp", "showpipe"    then  show_pipepath   
+      when  "sf", "streamframe"    then  show_streamframe   
 
       when  "x", "exit"      then  loop = false  # exit program
       when  "q", "quit"      then  loop = false  # exit program
@@ -68,7 +70,20 @@ class AngaliaCLI
     end
 
   #  ------------------------------------------------------------
+  #  show_pipiepath  -- display the pipe path
   #  ------------------------------------------------------------
+  def show_pipepath   
+    Environ.log_info("Pipe_path: " + ANGALIA.webcam_stream_pipe_path)
+  end
+
+  #  ------------------------------------------------------------
+  #  show_streamframe  -- show that we're getting a frame
+  #  ------------------------------------------------------------
+  def show_streamframe   
+    frame = ANGALIA.get_webcam_frame
+    Environ.log_info("TEST_FRAME: Mock frame length: #{frame.length} bytes")
+    Environ.log_info("TEST_FRAME: Mock frame encoding: #{frame.encoding}")
+  end
 
   #  ------------------------------------------------------------
   #  ------------------------------------------------------------

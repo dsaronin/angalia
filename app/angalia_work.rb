@@ -178,6 +178,20 @@ class AngaliaWork
   end
 
   # ------------------------------------------------------------
+  # webcam_stream_pipe_path  -- returns fully formed path
+  # ------------------------------------------------------------
+  def webcam_stream_pipe_path
+    return @my_webcam.get_pipe_path
+  end
+
+  # ------------------------------------------------------------
+  # get_webcam_frame -- Extract and Return a Single Frame
+  # ------------------------------------------------------------
+  def get_webcam_frame
+    return @my_webcam.get_stream_frame
+  end  # get_webcam_frame
+
+  # ------------------------------------------------------------
   # ------------------------------------------------------------
 
 end # class AngaliaWork

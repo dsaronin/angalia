@@ -1,4 +1,4 @@
 # app/version.rb
 module Angalia
-  VERSION = "1.01"
+  VERSION = "1.2"
 end
