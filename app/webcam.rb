@@ -8,21 +8,41 @@
 # and starting/stopping a low-bandwidth MJPEG stream to a named pipe.
 require 'singleton'
 require 'open3' # Required for executing system commands and capturing output
-require_relative 'environ' # Required for Environ.log_info, Environ::MY_WEBCAM_NAME
+require_relative 'environ' # Required for Environ.log_info, Environ::MY_WEBCAM_NAME, Environ::WEBCAM_PIPE
 require_relative 'angalia_error' # Required for AngaliaError::WebcamError, AngaliaError::WebcamOperationError
 
 class Webcam
   include Singleton
 
+  # ------------------------------------------------------------
+  # new Webcam Singleton
+  # ------------------------------------------------------------
   def initialize
     verify_configuration  # Perform configuration check on initialization
-    @is_streaming = false # current streaming state
+    clear_state
   end
 
   # ------------------------------------------------------------
+  # clear_state  -- clears everything in the internal state
+  # ------------------------------------------------------------
+  def clear_state
+    # current streaming state is true IFF @ffmpeg_pid is not nil
+    @ffmpeg_pid = nil     # Stores the PID of the running ffmpeg process
+
+    # @ffmpeg_stdin, @ffmpeg_stdout_stderr, @ffmpeg_wait_thr 
+    # Used in for Open3.popen2e
+    @ffmpeg_stdin&.close
+    @ffmpeg_stdout_stderr&.close
+    @ffmpeg_wait_thr&.value
+
+    @ffmpeg_stdin = nil
+    @ffmpeg_stdout_stderr = nil
+    @ffmpeg_wait_thr = nil
+  end # clear_state
+
+  # ------------------------------------------------------------
   # verify_configuration -- Checks for critical webcam setup issues.
-  # This method ensures that the webcam device is present and accessible
-  # before any streaming operations are attempted.
+  # Ensures webcam device is present and accessible.
   # Raises AngaliaError::WebcamError if configuration is incorrect.
   # ------------------------------------------------------------
   def verify_configuration
@@ -37,7 +57,7 @@ class Webcam
       end
 
       unless stdout.include?(Environ::MY_WEBCAM_NAME)
-        msg = "Webcam: expected '#{Environ::MY_WEBCAM_NAME}' not found in v4l2-ctl output."
+        msg = "Webcam: expected '/dev/#{Environ::MY_WEBCAM_NAME}' not found in v4l2-ctl output."
         Environ.log_error(msg)
         raise AngaliaError::WebcamError.new(msg)
       end
@@ -55,7 +75,7 @@ class Webcam
       raise # Re-raise for AngaliaWork to handle as a MajorError
     rescue => e
       # Catches any unexpected errors during configuration verification
-      msg ="Webcam: Unexpected error verify_configuration: #{e.message}" 
+      msg ="Webcam: Unexpected error verify_configuration: #{e.message}"
       Environ.log_fatal(msg)
       raise AngaliaError::WebcamError.new(msg)
     end
@@ -64,65 +84,67 @@ class Webcam
   end # verify_configuration
 
   # ------------------------------------------------------------
-  # start_stream -- Initiates a low-bandwidth MJPEG stream from the webcam.
-  # This method is intended to run an ffmpeg process that captures video
-  # and outputs it to a named pipe (Environ::WEBCAM_PIPE).
-  # Raises AngaliaError::WebcamOperationError if the stream fails to start.
+      # Construct ffmpeg command.
+      # -y: Overwrite output without asking.
+      # -f v4l2: Input format.
+      # -i /dev/video0: Input device.
+      # -s 640x480: Resolution.
+      # -r 24: Frame rate.
+      # -an: Disable audio.
+      # -f mjpeg: Output format.
+      # /tmp/CAMOUT: Output pipe.
+  # ------------------------------------------------------------
+      FFMPEG_START_CMD = "ffmpeg -y -f v4l2 -i /dev/#{Environ::MY_WEBCAM_NAME} -s 640x480 -r 24 -an -f mjpeg #{Environ::WEBCAM_PIPE}"
+      FFMPEG_ACTIVE_CHK  = "pgrep ffmpeg"
+  # ------------------------------------------------------------
+  # start_stream -- Initiates low-bandwidth MJPEG stream to named pipe.
+  # runs ffmpeg in background, captures PID.
+  # Raises AngaliaError::WebcamOperationError if stream fails to start.
   # ------------------------------------------------------------
   def start_stream
-    Environ.log_info("Webcam: Attempting to start low-bandwidth stream.")
+    Environ.log_info("Webcam: Starting low-bandwidth stream.")
     begin
-      # TODO: Replace with actual system call for ffmpeg
-      # Example: success = system("ffmpeg -f v4l2 -i /dev/video0 -f mjpeg -an -update 1 - &")
-      # For now, simulate success:
-      success = true # Simulate successful command execution
+      stop_stream    # force existing ffmpegs to stop
 
-      unless success
-        raise AngaliaError::WebcamOperationError.new("Failed to start ffmpeg stream.")
+      # Execute command and capture PID using Open3.popen2e for robust process management.
+      @ffmpeg_stdin, @ffmpeg_stdout_stderr, @ffmpeg_wait_thr = Open3.popen2e(FFMPEG_START_CMD)
+      @ffmpeg_pid = @ffmpeg_wait_thr.pid
+
+      ffmpeg_pids = `pgrep ffmpeg`.strip
+      # Check if process is running.
+      if ffmpeg_pids&.empty?
+        msg = "Webcam: Failed to start ffmpeg stream or retrieve PID."
+        Environ.log_error(msg)
+        raise AngaliaError::WebcamOperationError.new(msg)
       end
-      @is_streaming = true # Update streaming state on success
-      Environ.log_info("Webcam: Low-bandwidth stream started.")
+
+      @is_streaming = true # Update state
+      Environ.log_info("Webcam: Stream started (PID: #{@ffmpeg_pid}).")
+
+      # RESCUE BLOCK =======================================================
     rescue AngaliaError::WebcamOperationError => e
-      # Handles specific operation errors during stream start
-      Environ.log_error("Webcam: Operation error starting stream: #{e.message}")
-      @is_streaming = false # Ensure state is consistent with failure
-      raise # Re-raise the specific error for AngaliaWork to catch
+      Environ.log_error("Webcam: Stream start error: #{e.message}")
+      clear_state
+      raise # Re-raise for AngaliaWork to catch
     rescue => e
-      # Handles any unexpected errors during stream start
-      Environ.log_error("Webcam: Unexpected error during stream start: #{e.message}")
-      @is_streaming = false
-      raise AngaliaError::WebcamOperationError.new("Unexpected error during stream start: #{e.message}") # Wrap unexpected errors
+      msg = "Webcam: Unexpected stream start error: #{e.message}"
+      Environ.log_error(msg)
+      clear_state
+      raise AngaliaError::WebcamOperationError.new(msg)
     end
+      # END RESCUE BLOCK ====================================================
   end # start_stream
 
   # ------------------------------------------------------------
-  # stop_stream -- Terminates the currently running webcam stream.
-  # This method is intended to stop the ffmpeg process that is writing
-  # to the named pipe.
-  # Raises AngaliaError::WebcamOperationError if the stream fails to stop.
+      FFMPEG_KILL_ALL  = "pkill -9 ffmpeg || true"
+  # ------------------------------------------------------------
+  # stop_stream -- Terminates the running webcam stream.
+  # Forcefully kills all ffmpeg processes
   # ------------------------------------------------------------
   def stop_stream
-    Environ.log_info("Webcam: Attempting to stop stream.")
-    begin
-      # TODO: Replace with actual system call for pkill ffmpeg
-      # Example: success = system("pkill ffmpeg")
-      # For now, simulate success:
-      success = true # Simulate successful command execution
-
-      unless success
-        raise AngaliaError::WebcamOperationError.new("Failed to stop ffmpeg process.")
-      end
-      @is_streaming = false # Update streaming state on success
+      system( FFMPEG_KILL_ALL ) # kill any lingering ffmpeg procs
+      clear_state   
       Environ.log_info("Webcam: Stream stopped.")
-    rescue AngaliaError::WebcamOperationError => e
-      # Handles specific operation errors during stream stop
-      Environ.log_error("Webcam: Operation error stopping stream: #{e.message}")
-      # No need to change @is_streaming here, as it's already set to false
-      raise # Re-raise the specific error
-    rescue => e
-      Environ.log_error("Webcam: Unexpected error during stream stop: #{e.message}")
-      raise AngaliaError::WebcamOperationError.new("Unexpected error during stream stop: #{e.message}") # Wrap unexpected errors
-    end
   end # stop_stream
 
   # ------------------------------------------------------------
@@ -131,7 +153,7 @@ class Webcam
   #   boolean: true if streaming, false otherwise.
   # ------------------------------------------------------------
   def streaming?
-    @is_streaming
+    return !@ffmpeg_pid.nil?
   end
 
   # ------------------------------------------------------------
