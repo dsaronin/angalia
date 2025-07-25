@@ -137,12 +137,14 @@ class Webcam
 
   # ------------------------------------------------------------
       FFMPEG_KILL_ALL  = "pkill -9 ffmpeg || true"
+      KILL_FIFO  =  "rm /tmp/CAMOUT || true"
   # ------------------------------------------------------------
   # stop_stream -- Terminates the running webcam stream.
   # Forcefully kills all ffmpeg processes
   # ------------------------------------------------------------
   def stop_stream
       system( FFMPEG_KILL_ALL ) # kill any lingering ffmpeg procs
+      # TODO?   system( KILL_FIFO )   # removes any lingering PIPE
       clear_state   
       Environ.log_info("Webcam: Stream stopped.")
   end # stop_stream
