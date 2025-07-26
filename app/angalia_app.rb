@@ -29,7 +29,7 @@ class AngaliaApp < Sinatra::Application
   # GET /
   # Displays the main caregiver control panel with action buttons.
   get '/' do
-    haml :home
+    haml :index
   end # get /
 
   # 2. View Webcam Stream

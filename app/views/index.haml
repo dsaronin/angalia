@@ -1,24 +1,23 @@
-%h3  Welcome to Angalia&trade;
-%p   
-  Angalia allows authorized caregivers to remotely visually
-  monitor an elderly individual.
+%h3  Welcome to Angalia&trade;
+%p   
+  Angalia allows authorized caregivers to remotely 
+  monitor an elderly patient.
 %br
-%h6 
-  Abilities: &ensp;
-  = link_to( "Meeting on &raquo;", "/meeton", { :title => "Start video meeting" } )
-  &ensp; or &ensp;
-  = link_to( "Meeting off &raquo;", "/meetoff", { :title => "End video meeting" } )
-  &ensp; or &ensp;
-  = link_to( "Webcam &raquo;", "/camit", { :title => "Monitoring webcam" } )
-%h6 
-  = link_to( "Settings &raquo;", "/settings", { :title => "Change settings" } )
+%h6 
+  Abilities: &ensp;
+  %form{:action => "/start_meet", :method => "post", :style => "display:inline;"}
+    %button{:type => "submit", :title => "Start video meeting"} Meeting on &raquo;
+  &ensp; 
+  %form{:action => "/end_meet", :method => "post", :style => "display:inline;"}
+    %button{:type => "submit", :title => "End video meeting"} Meeting off &raquo;
+  &ensp; 
+  = link_to( "Webcam &raquo;", "/webcam_stream", { :title => "Monitoring webcam" } )
+%h6 
+  = link_to( "Status &raquo;", "/status", { :title => "View system status" } )
 %br
 %br
 %br
 %br
 %i
-  Note: This is a working demonstration of Angalia capabilities.
-  Click link below and read all disclaimers before proceeding.
-%i
-  = link_to( "Read Disclaimers &raquo;", "/disclaimers", { :title => "Disclaimers" } )
+  Note: This is a working demonstration of Angalia capabilities.
 
