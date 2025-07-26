@@ -11,6 +11,7 @@ require 'open3' # Required for executing system commands and capturing output
 require_relative 'environ' # Required for Environ.log_info, Environ::MY_WEBCAM_NAME, Environ::WEBCAM_PIPE
 require_relative 'angalia_error' # Required for AngaliaError::WebcamError, AngaliaError::WebcamOperationError
 require 'base64'
+require 'timeout' # Although IO.select handles the timeout, Timeout module useful other operations.
 
 class Webcam
   include Singleton
@@ -21,6 +22,16 @@ class Webcam
   def initialize
     verify_configuration  # Perform configuration check on initialization
     clear_state
+    initialize_stream
+  end
+
+  # ------------------------------------------------------------
+    # @pipe_io is the File object for named streaming pipe
+    # @buffer accumulates partial frame data
+  # ------------------------------------------------------------
+  def initialize_stream
+    @pipe_io = nil
+    @buffer = "" # Clear buffer on close
   end
 
   # ------------------------------------------------------------
@@ -79,7 +90,7 @@ class Webcam
       msg ="Webcam: Unexpected error verify_configuration: #{e.message}"
       Environ.log_fatal(msg)
       raise AngaliaError::WebcamError.new(msg)
-    end
+    end  # rescue block
       # END RESCUE BLOCK ====================================================
 
   end # verify_configuration
@@ -167,37 +178,144 @@ class Webcam
   end
 
   # ------------------------------------------------------------
-  # get_stream_frame -- Extract and Return a Single Frame
-  # ------------------------------------------------------------
-  def get_stream_frame
-    return get_mock_webcam_frame 
-  end  # get_webcam_frame
-
-
   # Mock data for a single, tiny JPEG frame (e.g., a 1x1 black pixel JPEG)
   # This is a base64 encoded string of a very small JPEG.
   # In a real scenario, this would come from the named pipe.
+  # ------------------------------------------------------------
   MOCK_JPEG_FRAME_BASE64 = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAD/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKgAD//Z"
-
+  # ------------------------------------------------------------
   # This method would simulate reading a frame from the pipe.
   # For testing, it just decodes our mock data.
+  # Example usage (for testing):
+  # frame = webcam_instance.get_mock_webcam_frame
+  # puts "Mock frame length: #{frame.length} bytes"
+  # puts "Mock frame encoding: #{frame.encoding}"
+  # ------------------------------------------------------------
+  # get_mock_webcam_frame  -- returns a static mocked up frame
+  # ------------------------------------------------------------
   def get_mock_webcam_frame
     # Decode the base64 string into binary data.
     # Ensure the encoding is ASCII-8BIT (binary) which is appropriate for image data.
     Base64.decode64(MOCK_JPEG_FRAME_BASE64).force_encoding('ASCII-8BIT')
   end
 
-# Example usage (for testing):
-# frame = webcam_instance.get_mock_webcam_frame
-# puts "Mock frame length: #{frame.length} bytes"
-# puts "Mock frame encoding: #{frame.encoding}"
-#
-# # You could then write this to a file to verify it's a valid JPEG:
-# File.open("mock_frame.jpg", "wb") { |f| f.write(frame) }
-# puts "Mock frame saved to mock_frame.jpg"
+  # ------------------------------------------------------------
+  # ------------------------------------------------------------
+  # get_stream_frame  -- reads single JPEG frame from stream
+  # Args:
+  #   timeout_seconds (Float): The maximum time to wait for data (e.g., 0.1 or 0.2 seconds).
+  #
+  # Returns:
+  #   String: The binary data of a complete JPEG frame if found within the timeout.
+  #   nil: If no complete frame is found within the timeout, or if the pipe is not open/ready.
+  #
+  # Raises:
+  #   Angalia::OperationError: If the pipe closes unexpectedly or a critical read/parse error occurs.
+  # ------------------------------------------------------------
+    JPEG_START = "\xFF\xD8".force_encoding('ASCII-8BIT')
+    JPEG_END   = "\xFF\xD9".force_encoding('ASCII-8BIT')
+  # ------------------------------------------------------------
+  def get_stream_frame(timeout_seconds = Environ::WEBCAM_READ_TIMEOUT_SECONDS)
+    return get_mock_webcam_frame 
+
+    # Ensure the pipe is open before attempting to read
+    unless @pipe_io && !@pipe_io.closed?
+      # Log an error but don't raise here, as AngaliaWork expects nil if not ready.
+      Environ.log_error "Webcam stream pipe is not open or has been closed."
+      return nil
+    end
+
+    begin
+      # Use IO.select to wait for data on the pipe with a timeout.
+      readable_io, _, _ = IO.select([@pipe_io], nil, nil, timeout_seconds)
+
+      if readable_io && readable_io.include?(@pipe_io)
+        # Data is available, read a chunk non-blocking.
+        # Adjust chunk size based on expected frame size/network conditions.
+        chunk = @pipe_io.read_nonblock(4096) # Read up to 4KB non-blocking
+
+        if chunk.nil? # EOF reached, pipe closed by writer
+          raise Angalia::OperationError.new("Webcam stream pipe closed unexpectedly by writer.")
+        end
+
+        @buffer << chunk
+        # Environ.log_debug "Read #{chunk.length} bytes. Buffer size: #{@buffer.length}" # For debugging
+      else
+        # No data available within the timeout.
+        # Environ.log_debug "No new data on pipe within #{timeout_seconds} seconds." # Too verbose
+        return nil
+      end
+
+      # Attempt to find a complete JPEG frame in the buffer.
+      start_index = @buffer.index(JPEG_START)
+      if start_index
+        end_index = @buffer.index(JPEG_END, start_index + JPEG_START.length)
+        if end_index
+          # Found a complete frame
+          frame_end_pos = end_index + JPEG_END.length
+          frame = @buffer.byteslice(start_index, frame_end_pos - start_index)
+
+          # Remove the extracted frame from the buffer for the next read
+          @buffer = @buffer.byteslice(frame_end_pos, @buffer.length - frame_end_pos)
+
+          # Environ.log_debug "Extracted frame of size: #{frame.length} bytes." # For debugging
+          return frame
+        end   # if end_index
+      end   # if start_index
+
+      # If we reach here, either no start marker yet, or start marker found but no end marker.
+      # Return nil, indicating more data is needed to form a complete frame.
+      nil
+
+      # RESCUE BLOCK =======================================================
+    rescue IO::WaitReadable # No data immediately available (read_nonblock)
+      # This can happen if IO.select indicates readability but the data is consumed
+      # before read_nonblock gets to it, or if there's a transient state.
+      nil
+    rescue EOFError # Pipe writer closed the pipe during read_nonblock
+      raise Angalia::OperationError.new("Webcam stream pipe writer disconnected during read.")
+    rescue => e
+      # =============
+      # Catch any other unexpected errors during read or parsing.
+      raise Angalia::OperationError.new("Error reading or parsing webcam stream: #{e.message}")
+      # =============
+    end  # rescue
+      # END RESCUE BLOCK ====================================================
+  end # get_stream_frame
+
+  # ------------------------------------------------------------
+  # pipe_exists?  -- returns t if the streaming pipe exists
+  # ------------------------------------------------------------
+  def pipe_exists?
+    return File.exist?(pipe_path)
+  end
+
+  # ------------------------------------------------------------
+  # start_pipe_reading  -- initializes, manages named pipe
+  # called when webcam streaming is started
+  # ------------------------------------------------------------
+  def start_pipe_reading(pipe_path = Environ::WEBCAM_PIPE_PATH)
+    @pipe_io = File.open(pipe_path, 'rb')
+    @pipe_io.sync = true # Ensure reads are immediate
+    Environ.log_info "Webcam: #{pipe_path} opened for reading"
+    
+    rescue => e
+      raise Angalia::ConfigurationError.new("Failed to open #{e.message}")
+  end   # end start_pipe_reading
+
+  # ------------------------------------------------------------
+  # Method to close the named pipe.
+  # ------------------------------------------------------------
+  def stop_pipe_reading
+    if @pipe_io && !@pipe_io.closed?
+      @pipe_io.close
+      Environ.log_info "Webcam: stream pipe closed."
+    end
+    initialize_stream
+  end
 
   # ------------------------------------------------------------
   # ------------------------------------------------------------
-
+  #
 end # Class Webcam
 
