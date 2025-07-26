@@ -7,18 +7,22 @@ require_relative './app/angalia_work'
 configure do
   ENV['SINATRA_ENV'] ||= "development"
   ENV['RACK_ENV']    ||= "development"
+  ENV['DEBUG_ENV']    ||= "true"
+  ENV['VPN_TUNNEL_ENV']  ||= "off"
 
   ANGALIA = Angalia::AngaliaWork.new 
   ANGALIA.setup_work()    # initialization of everything
 
   PUBLIC_DIR = File.join(File.dirname(__FILE__), 'public')
+
   set :public_folder, PUBLIC_DIR
   set :root, File.dirname(__FILE__)
   set :haml, { escape_html: false }
-  set :session_secret, '748110627dfc29efde83c90c7a1e689b8dc8e4c21033345e91764f4b4c98443395ee5e96418443011ac588e7ca77fb1a26b172223b5875f3108ef7b4ec8124f3'
+  set :session_secret, ENV['ANGALIA_TOKEN'] 
 
-  Angalia::Environ.log_info  "PUBLIC_DIR: #{PUBLIC_DIR}"
-  Angalia::Environ.log_info  "configuring Angalia application"
+  Angalia::Environ.log_info  "Config: Configuring Angalia application"
+  Angalia::Environ.log_info  "Config: PUBLIC_DIR: #{PUBLIC_DIR}"
+  Angalia::Environ.log_info  "Config: Env=Sinatra: #{ENV['SINATRA_ENV']}, Rack: #{ ENV['RACK_ENV']}, Debug: #{ENV['DEBUG_ENV']}, VPN: #{ENV['VPN_TUNNEL_ENV']}"
 
 end  # configure
 

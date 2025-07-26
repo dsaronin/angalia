@@ -4,7 +4,7 @@ module Angalia              # Define the top-level module  Angalia::
 # +++++++++++++++++++++++++++++++++++++++++++++++++
 
 module Angalia
-  VERSION = "1.6"
+  VERSION = "1.7"
 end
 
 end  # module Angalia
