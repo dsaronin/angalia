@@ -7,8 +7,8 @@
 
 require 'sinatra'
 require 'haml'
-require 'sinatra/form_helpers' # Useful for potential forms on the home or status page
 require_relative 'tag_helpers'
+require 'sinatra/form_helpers' # Useful for potential forms on the home or status page
 require 'rack-flash' # For displaying success/error messages to the user
 require 'yaml' # Keep this, as it might be used by Environ or other configuration loading
 
@@ -28,6 +28,9 @@ class AngaliaApp < Sinatra::Application
 
   set :root, File.dirname(__FILE__)
   set :views, File.join(File.dirname(__FILE__), 'views') # Explicitly set views directory
+  
+ # Disable show_exceptions in development to ensure 'error do' block is hit
+ # set :show_exceptions, false # used for testing
 
   # ------------------------------------------------------------
   # Web Server Routes
@@ -39,6 +42,15 @@ class AngaliaApp < Sinatra::Application
   get '/' do
     haml :index
   end # get /
+
+  get '/disclaimers' do
+    haml :disclaimers
+  end
+
+  get '/about' do
+    haml :about
+  end
+
 
   # 2. View Webcam Stream
   # GET /webcam_stream
@@ -94,78 +106,99 @@ class AngaliaApp < Sinatra::Application
     end # stream
   end # get /webcam_stream
 
-  # 3. Start Jitsi Meet Session
-  # POST /start_meet
-  # Triggers the Angalia system to initiate a Jitsi Meet session.
-  post '/start_meet' do
-    begin
-      if ANGALIA.start_meet
-        flash[:success] = "Jitsi Meet session initiated successfully."
-      else
-        flash[:error] = "Failed to initiate Jitsi Meet session."
-      end
-    rescue ConfigurationError => e
-      # =============
-      # Handle configuration-related errors.
-      flash[:error] = "Configuration error preventing Jitsi Meet: #{e.message}"
-      Environ.log_error "Configuration error during start_meet: #{e.message}"
-      # =============
-    rescue OperationError => e
-      # =============
-      # Handle operational errors during the process.
-      flash[:error] = "Operation error during Jitsi Meet initiation: #{e.message}"
-      Environ.log_error "Operation error during start_meet: #{e.message}"
-      # =============
-    rescue => e
-      # =============
-      # Catch any other unexpected errors.
-      flash[:error] = "An unexpected error occurred while starting Jitsi Meet: #{e.message}"
-      Environ.log_error "Unexpected error during start_meet: #{e.message}"
-      # =============
-    end # begin
-    redirect '/' # Redirect to the home page after action
-  end # post /start_meet
+# 3. Start Jitsi Meet Session
+ # POST /start_meet
+ # Triggers the Angalia system to initiate a Jitsi Meet session.
+ post '/start_meet' do
 
-  # 4. End Jitsi Meet Session
-  # POST /end_meet
-  # Triggers the Angalia system to terminate the active Jitsi Meet session.
-  post '/end_meet' do
-    begin
-      if ANGALIA.end_meet
-        flash[:success] = "Jitsi Meet session terminated successfully."
-      else
-        flash[:error] = "Failed to terminate Jitsi Meet session."
-      end
-    rescue ConfigurationError => e
-      # =============
-      # Handle configuration-related errors.
-      flash[:error] = "Configuration error preventing Jitsi Meet termination: #{e.message}"
-      Environ.log_error "Configuration error during end_meet: #{e.message}"
-      # =============
-    rescue OperationError => e
-      # =============
-      # Handle operational errors during the process.
-      flash[:error] = "Operation error during Jitsi Meet termination: #{e.message}"
-      Environ.log_error "Operation error during end_meet: #{e.message}"
-      # =============
-    rescue => e
-      # =============
-      # Catch any other unexpected errors.
-      flash[:error] = "An unexpected error occurred while ending Jitsi Meet: #{e.message}"
-      Environ.log_error "Unexpected error during end_meet: #{e.message}"
-      # =============
-    end # begin
-    redirect '/' # Redirect to the home page after action
-  end # post /end_meet
+   start_thread = Thread.new do
+     begin
+       if ANGALIA.start_meet
+         Environ.log_info "HUB: Jitsi Meet session initiated as background task."
+       else
+         Environ.log_error "HUB: Jitsi Meet failed to initiate as background task.."
+       end
+
+     rescue ConfigurationError => e
+       # =============
+       # Handle configuration-related errors.
+       Environ.log_error "HUB: start_meet configuration error (background task): #{e.message}"
+       # =============
+     rescue OperationError => e
+       # =============
+       # Handle operational errors during the process.
+       Environ.log_error "HUB: Operation error, start_meet (background task): #{e.message}"
+       # =============
+     rescue => e
+       # =============
+       # Catch any other unexpected errors.
+       Environ.log_error "HUB: unexpected error starting Jitsi Meet (background task): #{e.message}"
+       # =============
+     end # begin
+   end # Thread.new
+
+   # start_thread.join   # waits for completion
+
+   # Immediately send a response indicating the action has been triggered.
+   flash[:notice] = "Starting video meeting... Everything will connect shortly."
+   redirect '/' # Redirect to the home page immediately
+
+ end # post /start_meet
+
+ # 4. End Jitsi Meet Session
+ # POST /end_meet
+ # Triggers the Angalia system to terminate the active Jitsi Meet session.
+ post '/end_meet' do
+
+   stop_thread = Thread.new do
+     begin
+       if ANGALIA.end_meet
+         Environ.log_info "HUB: Video Meet terminated in background."
+       else
+         Environ.log_error "HUB: Video Meet failed to terminate in background."
+       end
+     rescue ConfigurationError => e
+       # =============
+       # Handle configuration-related errors.
+       Environ.log_error "HUB: Configuration error during end_meet (background task): #{e.message}"
+       # =============
+     rescue OperationError => e
+       # =============
+       # Handle operational errors during the process.
+       Environ.log_error "HUB: Operation error during end_meet (background task): #{e.message}"
+       # =============
+     rescue => e
+       # =============
+       # Catch any other unexpected errors.
+       Environ.log_error "HUB: Unexpected error at end_meet (background task): #{e.message}"
+       # =============
+     end # begin
+   end # Thread.new
+
+   # stop_thread.join   # waits for completion
+
+   # Immediately send a response indicating the action has been triggered.
+   flash[:notice] = "Terminating video meeting... disconnecting shortly."
+   redirect '/' # Redirect to the home page immediately
+
+ end # post /end_meet
+
 
   # 5. View System Status (Developer/Debug)
   # GET /status
   # Displays current system status information for debugging/monitoring.
   get '/status' do
     # ANGALIA.do_status should return a hash or object with relevant data.
-    @status_info = ANGALIA.do_status # Method to be implemented in AngaliaWork
-    haml :status
+    @status_info = ANGALIA.do_status 
+    flash[:error] = @status_info
+    redirect '/'
   end # get /status
+
+        # TEMPORARY ROUTE TO FORCE 500 ERROR
+        get '/force_500' do
+          raise "This is a forced 500 error for testing purposes!"
+        end
+        # END TEMPORARY ROUTE
 
   # ------------------------------------------------------------
   # Error Handling
@@ -174,7 +207,7 @@ class AngaliaApp < Sinatra::Application
   # Generic error handler for 404 Not Found pages.
   not_found do
     status 404
-    haml :not_found
+    haml :err_404
   end
 
   # Generic error handler for 500 Internal Server Errors.
@@ -182,7 +215,7 @@ class AngaliaApp < Sinatra::Application
     status 500
     @error_message = env['sinatra.error'].message
     Environ.log_error "Internal Server Error: #{@error_message}"
-    haml :error
+    haml :err_500
   end
 
 end # class AngaliaApp

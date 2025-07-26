@@ -63,7 +63,7 @@ class AngaliaWork
   # do_status -- displays then returns status
   # ------------------------------------------------------------
   def do_status
-    sts = ""
+    sts = "TODO: status info"
     Environ.put_info ">>>>> status: " + sts
     return sts
   end
@@ -154,8 +154,8 @@ class AngaliaWork
       @my_monitor.turn_off     # Turn off the monitor
       @my_webcam.start_stream  # Restart the always-on webcam stream
       
-         # disconnect the vpn when we're debugging system
-      @my_openvpn.disconnect_vpn_tunnel if Environ::DEBUG_MODE
+         # disconnect the vpn when we're debugging system locally
+      # @my_openvpn.disconnect_vpn_tunnel if Environ::DEBUG_MODE
 
       Environ.log_info("Jitsi Meet session termination sequence completed.")
       return true # Indicate success
