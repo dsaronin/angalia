@@ -1,6 +1,10 @@
 # mixin Module for ANSI escape sequences for changing display colors
 
 
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia # Define the top-level module
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
 module AnsiColor
     #Color end string, color reset
     ANSI_RESET   = "\u001b[0m"
@@ -113,3 +117,6 @@ module AnsiColor
     def put_message(s) puts wrapYellow(s)    end
 
 end  # module AnsiColor
+
+end  # module Angalia
+

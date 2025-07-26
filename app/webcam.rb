@@ -13,6 +13,10 @@ require_relative 'angalia_error' # Required for AngaliaError::WebcamError, Angal
 require 'base64'
 require 'timeout' # Although IO.select handles the timeout, Timeout module useful other operations.
 
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia              # Define the top-level module  
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
 class Webcam
   include Singleton
 
@@ -210,7 +214,7 @@ class Webcam
   #   nil: If no complete frame is found within the timeout, or if the pipe is not open/ready.
   #
   # Raises:
-  #   Angalia::OperationError: If the pipe closes unexpectedly or a critical read/parse error occurs.
+  #   OperationError: If the pipe closes unexpectedly or a critical read/parse error occurs.
   # ------------------------------------------------------------
     JPEG_START = "\xFF\xD8".force_encoding('ASCII-8BIT')
     JPEG_END   = "\xFF\xD9".force_encoding('ASCII-8BIT')
@@ -235,7 +239,7 @@ class Webcam
         chunk = @pipe_io.read_nonblock(4096) # Read up to 4KB non-blocking
 
         if chunk.nil? # EOF reached, pipe closed by writer
-          raise Angalia::OperationError.new("Webcam stream pipe closed unexpectedly by writer.")
+          raise OperationError.new("Webcam stream pipe closed unexpectedly by writer.")
         end
 
         @buffer << chunk
@@ -273,11 +277,11 @@ class Webcam
       # before read_nonblock gets to it, or if there's a transient state.
       nil
     rescue EOFError # Pipe writer closed the pipe during read_nonblock
-      raise Angalia::OperationError.new("Webcam stream pipe writer disconnected during read.")
+      raise OperationError.new("Webcam stream pipe writer disconnected during read.")
     rescue => e
       # =============
       # Catch any other unexpected errors during read or parsing.
-      raise Angalia::OperationError.new("Error reading or parsing webcam stream: #{e.message}")
+      raise OperationError.new("Error reading or parsing webcam stream: #{e.message}")
       # =============
     end  # rescue
       # END RESCUE BLOCK ====================================================
@@ -300,7 +304,7 @@ class Webcam
     Environ.log_info "Webcam: #{pipe_path} opened for reading"
     
     rescue => e
-      raise Angalia::ConfigurationError.new("Failed to open #{e.message}")
+      raise ConfigurationError.new("Failed to open #{e.message}")
   end   # end start_pipe_reading
 
   # ------------------------------------------------------------
@@ -318,4 +322,6 @@ class Webcam
   # ------------------------------------------------------------
   #
 end # Class Webcam
+
+end  # module Angalia
 

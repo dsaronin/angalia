@@ -6,13 +6,18 @@
 # accessed either from the CLI controller or the WEB i/f controller
 #
 
-class AngaliaWork
   require_relative 'environ'
   require_relative 'webcam' # Required for Webcam Singleton
   require_relative 'monitor' # Required for Monitor Singleton
   require_relative 'meet_view' # Required for MeetView Singleton
   require_relative 'openvpn' # Required for OpenVPN Singleton
   require_relative 'angalia_error' # Required for AngaliaError classes
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia # Define the top-level module
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
+class AngaliaWork
 
   # ------------------------------------------------------------
   # initialize -- creates a new AngaliaWork object; inits environ
@@ -195,4 +200,5 @@ class AngaliaWork
   # ------------------------------------------------------------
 
 end # class AngaliaWork
+end  # module Angalia
 

@@ -6,6 +6,10 @@ require 'singleton'
 require_relative 'environ' # Required for Environ.log_info, Environ::OPENVPN_CLIENT_CONFIG_PATH, Environ::VPN_RETRY_COUNT
 require_relative 'angalia_error' # Required for AngaliaError::OpenVPNError
 
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia              # Define the top-level module  
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
 class OpenVPN
   include Singleton
 
@@ -110,3 +114,6 @@ class OpenVPN
   # ------------------------------------------------------------
   # ------------------------------------------------------------
 end  # Class OpenVPN
+
+end  # module Angalia
+

@@ -14,6 +14,9 @@
   require_relative 'version'
   
 #----------------------------------------------------------
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia              # Define the top-level module  Angalia::
+# +++++++++++++++++++++++++++++++++++++++++++++++++
 
 class Environ
   include Singleton
@@ -42,6 +45,7 @@ class Environ
   VPN_SLEEP_COUNT = 5 # value for sleep before checking
   WEBCAM_PIPE = "CAMOUT"
   WEBCAM_PIPE_PATH = "/dev/#{MY_WEBCAM_NAME}"
+  WEBCAM_READ_TIMEOUT_SECONDS  = 0.5
 
   #  ------------------------------------------------------------
  
@@ -53,7 +57,7 @@ class Environ
 
 
   class << self   
-        # mixin AnsiColor Module to provide prettier ansi output
+        # mixin Angalia::AnsiColor Module to provide prettier ansi output
         # makes all methods in AnsiColor become Environ class methods
     include AnsiColor
         # makes the following class-level instance variables w/ accessors
@@ -162,3 +166,4 @@ class Environ
   #  ------------------------------------------------------------
 end  # Class Environ
   
+end  # module Angalia

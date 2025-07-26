@@ -6,14 +6,22 @@
 #
 
 require 'sinatra'
+require 'haml'
 require 'sinatra/form_helpers' # Useful for potential forms on the home or status page
+require_relative 'tag_helpers'
 require 'rack-flash' # For displaying success/error messages to the user
 require 'yaml' # Keep this, as it might be used by Environ or other configuration loading
 
-# Assume AngaliaWork and Environ are loaded via config.ru and available globally
+# Assumes AngaliaWork and Environ are loaded via config.ru and available globally
 # through the ANGALIA constant.
 
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia # Define the top-level module
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
+
 class AngaliaApp < Sinatra::Application
+  helpers Sinatra::AssetHelpers # Explicitly include your AssetHelpers
 
   enable :sessions
   use Rack::Flash
@@ -96,13 +104,13 @@ class AngaliaApp < Sinatra::Application
       else
         flash[:error] = "Failed to initiate Jitsi Meet session."
       end
-    rescue Angalia::ConfigurationError => e
+    rescue ConfigurationError => e
       # =============
       # Handle configuration-related errors.
       flash[:error] = "Configuration error preventing Jitsi Meet: #{e.message}"
       Environ.log_error "Configuration error during start_meet: #{e.message}"
       # =============
-    rescue Angalia::OperationError => e
+    rescue OperationError => e
       # =============
       # Handle operational errors during the process.
       flash[:error] = "Operation error during Jitsi Meet initiation: #{e.message}"
@@ -128,13 +136,13 @@ class AngaliaApp < Sinatra::Application
       else
         flash[:error] = "Failed to terminate Jitsi Meet session."
       end
-    rescue Angalia::ConfigurationError => e
+    rescue ConfigurationError => e
       # =============
       # Handle configuration-related errors.
       flash[:error] = "Configuration error preventing Jitsi Meet termination: #{e.message}"
       Environ.log_error "Configuration error during end_meet: #{e.message}"
       # =============
-    rescue Angalia::OperationError => e
+    rescue OperationError => e
       # =============
       # Handle operational errors during the process.
       flash[:error] = "Operation error during Jitsi Meet termination: #{e.message}"
@@ -179,3 +187,4 @@ class AngaliaApp < Sinatra::Application
 
 end # class AngaliaApp
 
+end  # module Angalia

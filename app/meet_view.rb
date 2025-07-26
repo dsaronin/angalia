@@ -9,6 +9,10 @@ require_relative 'environ' # Required for Environ.log_info
 require_relative 'angalia_error' # Required for AngaliaError::MeetViewError
 require 'timeout' # Required for Timeout.timeout in stop_session
 
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia              # Define the top-level module  
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
 class MeetView
   include Singleton
 
@@ -182,4 +186,6 @@ class MeetView
   # ------------------------------------------------------------
   # ------------------------------------------------------------
 end # Class MeetView
+
+end  # module Angalia
 

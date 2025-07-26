@@ -4,6 +4,10 @@
 # class Flags -- maintains application's trace, logging, execution flags
 #
 
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia              # Define the top-level module  Angalia::
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
 class Flags
 
   #  ------------------------------------------------------------
@@ -108,3 +112,5 @@ class Flags
   #  ------------------------------------------------------------
 
 end   # flags
+
+end  # module Angalia

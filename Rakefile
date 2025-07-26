@@ -1,5 +1,6 @@
 # Rakefile
 require 'fileutils'
+require 'securerandom'
 
 # Assuming your version file is app/version.rb
 VERSION_FILE = 'app/version.rb'
@@ -40,3 +41,9 @@ task :release, [:msg] do |t, args|
 
   puts "Git commit for version #{version}"
 end
+
+desc  "Generate secret string"
+task  :gensecret do
+  secret_string = SecureRandom.hex(64)
+  puts "Generated Secret String: #{secret_string}"
+end  # task

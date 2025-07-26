@@ -4,8 +4,13 @@
 # class AngaliaCLI -- 'controller' for CLI
 #
 
-class AngaliaCLI
   require_relative 'angalia_work'
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia # Define the top-level module
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
+class AngaliaCLI
 
     ANGALIA = AngaliaWork.new 
 
@@ -89,3 +94,4 @@ class AngaliaCLI
   #  ------------------------------------------------------------
 end  # class
 
+end  # module Angalia

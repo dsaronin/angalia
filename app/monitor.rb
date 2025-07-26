@@ -1,12 +1,16 @@
+# --- monitor.rb ---
 #
 # Angalia: A Remote Elder Monitoring Hub
 # Copyright (c) 2025 David S Anderson, All Rights Reserved
 #
 
-# --- monitor.rb ---
 require 'singleton'
 require_relative 'environ' # Required for Environ.log_info, Environ.my_monitor_default
 require_relative 'angalia_error' # Required for AngaliaError::MonitorError, AngaliaError::MonitorOperationError
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia              # Define the top-level module  
+# +++++++++++++++++++++++++++++++++++++++++++++++++
 
 class Monitor
   include Singleton
@@ -166,3 +170,4 @@ class Monitor
 
 end  # Class Monitor
 
+end  # module Angalia
