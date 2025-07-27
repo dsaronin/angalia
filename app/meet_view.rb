@@ -108,7 +108,7 @@ class MeetView
 
       # Add --kiosk only if not in DEBUG_MODE
       command_parts << "--kiosk" unless Environ::DEBUG_MODE
-
+      command_parts << "--start-fullscreen"
       # Add other necessary flags
       command_parts << "--autoplay-policy=no-user-gesture-required"
       # command_parts << "--use-fake-ui-for-media-stream"

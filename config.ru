@@ -30,7 +30,7 @@ run Angalia::AngaliaApp
 
 
 # notes
-# thin -R config.ru -a 127.0.0.1 -p 8080 start
+# thin -R config.ru -a 0.0.0.0 -p 8080 start
 #
 # http://localhost:8080/
 # curl http://localhost:8080/ -H "My-header: my data"
