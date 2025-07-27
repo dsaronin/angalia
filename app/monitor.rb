@@ -143,8 +143,11 @@ class Monitor
   def turn_off
     Environ.log_info("Monitor: Turning off display.")
     begin
-      # success = system("xrandr --output #{@display_name} --off")
-      success = true   # TODO: remove
+      if Environ::DEBUG_MODE && Environ::IS_DEVELOPMENT
+        success = true   # skip turning off monitor while debugging
+      else   # production mode, always turn off
+        success = system("xrandr --output #{@display_name} --off")
+      end  # if debugging
 
       unless success
         raise AngaliaError::MonitorOperationError.new("Failed to turn off monitor.")

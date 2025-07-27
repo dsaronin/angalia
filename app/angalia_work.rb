@@ -39,6 +39,11 @@ class AngaliaWork
       @my_meet_view = MeetView.instance
       @my_openvpn   = OpenVPN.instance # Instantiate OpenVPN Singleton
 
+      # auto turn on vpn if in production
+      unless Environ::IS_DEVELOPMENT
+        @my_openvpn.start_vpn   # make sure vpn has started
+      end
+
       Environ.log_info("AngaliaWork: All device configurations verified successfully.")
       # Environ.put_info FlashManager.show_defaults
     rescue AngaliaError::MajorError => e
@@ -63,7 +68,7 @@ class AngaliaWork
   # do_status -- displays then returns status
   # ------------------------------------------------------------
   def do_status
-    sts = "TODO: status info"
+    sts = Environ.to_sts
     Environ.put_info ">>>>> status: " + sts
     return sts
   end
@@ -155,7 +160,9 @@ class AngaliaWork
       @my_webcam.start_stream  # Restart the always-on webcam stream
       
          # disconnect the vpn when we're debugging system locally
-      # @my_openvpn.disconnect_vpn_tunnel if Environ::DEBUG_MODE
+      if Environ::DEBUG_MODE && Environ::DEBUG_VPN_OFF && Environ::IS_DEVELOPMENT
+        @my_openvpn.disconnect_vpn_tunnel 
+      end  # if debugging
 
       Environ.log_info("Jitsi Meet session termination sequence completed.")
       return true # Indicate success

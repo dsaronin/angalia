@@ -7,8 +7,8 @@ require_relative './app/angalia_work'
 configure do
   ENV['SINATRA_ENV'] ||= "development"
   ENV['RACK_ENV']    ||= "development"
-  ENV['DEBUG_ENV']    ||= "true"
-  ENV['VPN_TUNNEL_ENV']  ||= "off"
+  ENV['DEBUG_ENV']    ||= true
+  ENV['VPN_TUNNEL_ENV']  ||= false
 
   ANGALIA = Angalia::AngaliaWork.new 
   ANGALIA.setup_work()    # initialization of everything

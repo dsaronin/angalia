@@ -29,7 +29,9 @@ class Environ
   #  ------------------------------------------------------------
   EXIT_CMD  = "q"  # default CLI exit command used if EOF
   #  ------------------------------------------------------------
-  DEBUG_MODE = true
+  IS_DEVELOPMENT = ( ENV['SINATRA_ENV'] == "development" )
+  DEBUG_VPN_OFF =  ENV['DEBUG_ENV']  # == "off" )
+  DEBUG_MODE =  ENV['DEBUG_ENV']  # == "true" )
   #  ------------------------------------------------------------
   #  GLOBAL CONSTANTS
   #  ------------------------------------------------------------
@@ -44,7 +46,7 @@ class Environ
   VPN_RETRY_COUNT = 3 # Example: Retry 3 times
   VPN_SLEEP_COUNT = 5 # value for sleep before checking
   WEBCAM_PIPE = "CAMOUT"
-  WEBCAM_PIPE_PATH = "/dev/#{MY_WEBCAM_NAME}"
+  WEBCAM_PIPE_PATH = "/tmp/#{MY_WEBCAM_NAME}"
   WEBCAM_READ_TIMEOUT_SECONDS  = 0.5
 
   #  ------------------------------------------------------------
@@ -154,6 +156,11 @@ class Environ
     return MY_JITSI_MEET_ROOM
   end
 
+  #  ------------------------------------------------------------
+  #  ------------------------------------------------------------
+  def self.to_sts
+    return "dev: #{IS_DEVELOPMENT}, debug: #{DEBUG_VPN_OFF}, vpn: #{DEBUG_MODE}"
+  end
 
   # ------------------------------------------------------------
   # my_monitor_default -- Returns default monitor display name
