@@ -39,6 +39,10 @@ class Environ
   MY_MONITOR_DISPLAY_NAME  = "HDMI-A-0" # Default/initial monitor name
   DEV_MONITOR_DISPLAY_NAME = "HDMI-A-0" # Dev monitor name
   MY_WEBCAM_NAME = "video0"   # default webcam /dev name
+
+  MY_SPEAKERS = "alsa_output.usb-Generic_USB2.0_Device_20121120222012-00.analog-stereo"
+  MY_MIC = "alsa_input.usb-046d_0825_AA3F0D40-02.mono-fallback"
+
   MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia#config.prejoinPageEnabled=false"
   CHROMIUM_USER_DATA_DIR = File.expand_path("~/.angalia/chromium_profile")
   ANGALIA_VPN_CLIENT = "malagarasi-client"

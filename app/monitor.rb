@@ -141,19 +141,18 @@ class Monitor
   end # turn_on
 
   def turn_off
-    Environ.log_info("Monitor: Turning off display.")
+    Environ.log_info("Monitor: Turning off display (unless debugging).")
     begin
       if Environ::DEBUG_MODE && Environ::IS_DEVELOPMENT
         success = true   # skip turning off monitor while debugging
       else   # production mode, always turn off
         success = system("xrandr --output #{@display_name} --off")
+        @is_on = false
       end  # if debugging
 
       unless success
         raise AngaliaError::MonitorOperationError.new("Failed to turn off monitor.")
       end
-      @is_on = false
-      Environ.log_info("Monitor: Display turned off.")
     rescue AngaliaError::MonitorOperationError => e
       Environ.log_error("Monitor: Operation error turning off display: #{e.message}")
       # No need to change @is_on here, as it's already set to false

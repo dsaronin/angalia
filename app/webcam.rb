@@ -110,7 +110,7 @@ class Webcam
       # -f mjpeg: Output format.
       # /tmp/CAMOUT: Output pipe.
   # ------------------------------------------------------------
-      FFMPEG_START_CMD = "ffmpeg -y -f v4l2 -i /dev/#{Environ::MY_WEBCAM_NAME} -s 640x480 -r 24 -an -f mjpeg #{Environ::WEBCAM_PIPE}"
+      FFMPEG_START_CMD = "ffmpeg -y -f v4l2 -i /dev/#{Environ::MY_WEBCAM_NAME} -s 640x480 -r 24 -an -f mjpeg #{Environ::WEBCAM_PIPE_PATH}"
       FFMPEG_ACTIVE_CHK  = "pgrep ffmpeg"
   # ------------------------------------------------------------
   # start_stream -- Initiates low-bandwidth MJPEG stream to named pipe.

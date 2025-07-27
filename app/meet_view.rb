@@ -42,6 +42,11 @@ class MeetView
         raise AngaliaError::MeetViewError.new("org.chromium.Chromium Flatpak not installed. Please install it.")
       end
       Environ.log_info("MeetView: org.chromium.Chromium Flatpak installation verified.")
+
+     # speakers & mic setup here
+      speakers_setup
+      mic_setup
+
       Environ.log_info("MeetView: Configuration verified successfully.")
     rescue AngaliaError::MeetViewError => e
       Environ.log_fatal("MeetView: Configuration error: #{e.message}")
@@ -51,6 +56,34 @@ class MeetView
       raise AngaliaError::MeetViewError.new("Unexpected error during configuration verification: #{e.message}") # Wrap unexpected errors
     end
   end # verify_configuration
+
+  # ------------------------------------------------------------
+   SPKR_CMD_SET = "pactl set-default-sink #{Environ::MY_SPEAKERS}"
+   SPKR_CMD_VOL = "pactl set-sink-volume @DEFAULT_SINK@ 50%"
+   MIC_CMD_SET = "pactl set-source-mute #{Environ::MY_MIC} 0"
+   MIC_CMD_LVL = "pactl set-source-volume #{Environ::MY_MIC} 100%"
+  # ------------------------------------------------------------
+  # ------------------------------------------------------------
+  #  speakers_set  -- makes the attached speakers default
+  #  relates more to Video Meeting than anything else
+  # ------------------------------------------------------------
+  def speakers_setup
+        Environ.log_info  SPKR_CMD_SET if Environ::DEBUG_MODE
+    system( SPKR_CMD_SET )
+        Environ.log_info  SPKR_CMD_VOL  if Environ::DEBUG_MODE
+    system( SPKR_CMD_VOL )
+  end  # speakers_setup
+
+  # ------------------------------------------------------------
+  #  mic_setup  -- makes camera mic default
+  #  relates more to Video Meeting than anything else
+  # ------------------------------------------------------------
+  def mic_setup
+        Environ.log_info  MIC_CMD_SET  if Environ::DEBUG_MODE
+    system( MIC_CMD_SET )
+        Environ.log_info  MIC_CMD_LVL  if Environ::DEBUG_MODE
+    system( MIC_CMD_LVL )
+  end  # mic setup
 
   # ------------------------------------------------------------
   # start_session -- Launches Flatpak Chromium in kiosk mode for Jitsi Meet.
