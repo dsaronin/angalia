@@ -59,7 +59,7 @@ class MeetView
 
   # ------------------------------------------------------------
    SPKR_CMD_SET = "pactl set-default-sink #{Environ::MY_SPEAKERS}"
-   SPKR_CMD_VOL = "pactl set-sink-volume @DEFAULT_SINK@ 50%"
+   SPKR_CMD_VOL = "pactl set-sink-volume @DEFAULT_SINK@ 80%"
    MIC_CMD_SET = "pactl set-source-mute #{Environ::MY_MIC} 0"
    MIC_CMD_LVL = "pactl set-source-volume #{Environ::MY_MIC} 100%"
   # ------------------------------------------------------------
