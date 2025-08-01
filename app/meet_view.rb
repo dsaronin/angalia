@@ -113,6 +113,7 @@ class MeetView
       command_parts << "--autoplay-policy=no-user-gesture-required"
       # command_parts << "--use-fake-ui-for-media-stream"
       command_parts << "--disable-gpu"
+      command_parts << "--password-store=basic"
       # command_parts << "--disable-session-crashed-bubble" # Added to suppress restore prompt
       command_parts << "--no-first-run" # Suppress first-run wizard
       command_parts << "--user-data-dir=#{Environ::CHROMIUM_USER_DATA_DIR}" # Use dedicated profile
