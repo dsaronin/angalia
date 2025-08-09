@@ -7,9 +7,23 @@ require_relative './app/angalia_work'
 configure do
   ENV['SINATRA_ENV'] ||= "development"
   ENV['RACK_ENV']    ||= "development"
-  ENV['DEBUG_ENV']    ||= true
-  ENV['VPN_TUNNEL_ENV']  ||= false
+  ENV['DEBUG_ENV']    ||= true.to_s
+  ENV['VPN_TUNNEL_ENV']  ||= false.to_s
 
+# --------------------------------------------------
+  # Check system dependencies only in the "development" environment
+  # If pkgcheck.sh returns a non-zero exit status (failure), abort startup.
+  if ENV['SINATRA_ENV'] == "development"
+    unless system("./pkgcheck.sh")
+      warn "ERROR: Required system packages are missing or not found in PATH."
+      warn "Please review the output of ./pkgcheck.sh for details on missing dependencies."
+      abort "Aborting application startup due to missing system dependencies."
+    end
+  end
+
+# --------------------------------------------------
+# system environment confirmed; start application
+# --------------------------------------------------
   ANGALIA = Angalia::AngaliaWork.new 
   ANGALIA.setup_work()    # initialization of everything
 
