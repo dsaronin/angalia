@@ -47,3 +47,15 @@ task  :gensecret do
   secret_string = SecureRandom.hex(64)
   puts "Generated Secret String: #{secret_string}"
 end  # task
+
+
+desc "Checks for system package dependencies using pkgcheck.sh"
+task :packages do
+  puts "Running required system packages dependency check..."
+  # Execute the pkgcheck.sh script
+  unless system("./pkgcheck.sh")
+    abort "Dependency check failed. Please review the output above."
+  end
+  puts "Dependency check passed."
+end
+
