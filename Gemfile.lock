@@ -10,12 +10,12 @@ GEM
       tilt
     logger (1.7.0)
     matrix (0.4.3)
-    mustermann (3.0.3)
+    mustermann (3.0.4)
       ruby2_keywords (~> 0.0.1)
     pp (0.6.2)
       prettyprint
     prettyprint (0.2.0)
-    rack (3.1.16)
+    rack (3.2.0)
     rack-flash3 (1.0.5)
       rack
     rack-protection (4.1.1)
@@ -37,7 +37,7 @@ GEM
       tilt (~> 2.0)
     sinatra-formhelpers-ng (1.9.1)
     singleton (0.3.0)
-    temple (0.10.3)
+    temple (0.10.4)
     thin (2.0.1)
       daemons (~> 1.0, >= 1.0.9)
       eventmachine (~> 1.0, >= 1.0.4)
