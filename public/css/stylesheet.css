@@ -583,6 +583,25 @@ a#right-next {
     font-size: 24px;
   }
 }
+.webcam-container {
+  max-width: 700px;
+  width: 100%;
+  margin-bottom: 1em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#webcam-stream {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  border: 1px solid #C3CBE9;
+  width: 640px;
+  height: 480px;
+}
+
 @media (min-width: 768px) and (max-width: 991px) {
   html {
     font-size: 20px;
