@@ -15,6 +15,11 @@ class OpenVPN
 
   def initialize
     verify_configuration(false) # make sure client vpn service started
+    if Environ::SKIP_VPN_CONNECT  # fake malagarasi-client connection
+      Environ.log_warn("OpenVPN: Faking malagarasi-client connection; SKIP_VPN_CONNECT is true.")
+
+    end  # if SKIPPING VPN CONNECT
+
     # NOTE: does NOT establish vpn tunnel here.
   end
 
@@ -92,6 +97,8 @@ class OpenVPN
   # returns: state of tunnel_connected?  t if connected
   # ------------------------------------------------------------
   def connect_vpn_tunnel
+    return true if Environ::SKIP_VPN_CONNECT  # fake malagarasi-client connection
+
     countdown = Environ::VPN_RETRY_COUNT
 
     while ( !(state = tunnel_connected?) && (countdown -= 1) >=0 )

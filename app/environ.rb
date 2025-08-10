@@ -30,8 +30,9 @@ class Environ
   EXIT_CMD  = "q"  # default CLI exit command used if EOF
   #  ------------------------------------------------------------
   IS_DEVELOPMENT = ( ENV['SINATRA_ENV'] == "development" )
-  DEBUG_VPN_OFF =  ENV['DEBUG_ENV']  # == "off" )
-  DEBUG_MODE =  ENV['DEBUG_ENV']  # == "true" )
+  DEBUG_VPN_OFF =  ENV['DEBUG_ENV']  # == "off"
+  DEBUG_MODE =  ENV['DEBUG_ENV']  # == "true" 
+  SKIP_VPN_CONNECT =  ENV['SKIP_HUB_VPN']  # == "true"
   #  ------------------------------------------------------------
   #  GLOBAL CONSTANTS
   #  ------------------------------------------------------------

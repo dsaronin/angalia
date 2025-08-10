@@ -7,8 +7,9 @@ require_relative './app/angalia_work'
 configure do
   ENV['SINATRA_ENV'] ||= "development"
   ENV['RACK_ENV']    ||= "development"
-  ENV['DEBUG_ENV']    ||= true.to_s
-  ENV['VPN_TUNNEL_ENV']  ||= false.to_s
+  ENV['DEBUG_ENV']    ||= true.to_s  # true if DEBUG mode
+  ENV['VPN_TUNNEL_ENV']  ||= false.to_s  # future
+  ENV['SKIP_HUB_VPN']  ||= false.to_s   # true if SKIP malagarasi-client vpn connect
 
 # --------------------------------------------------
   # Check system dependencies only in the "development" environment
@@ -36,7 +37,7 @@ configure do
 
   Angalia::Environ.log_info  "Config: Configuring Angalia application"
   Angalia::Environ.log_info  "Config: PUBLIC_DIR: #{PUBLIC_DIR}"
-  Angalia::Environ.log_info  "Config: Env=Sinatra: #{ENV['SINATRA_ENV']}, Rack: #{ ENV['RACK_ENV']}, Debug: #{ENV['DEBUG_ENV']}, VPN: #{ENV['VPN_TUNNEL_ENV']}"
+  Angalia::Environ.log_info  "Config: Env=Sinatra: #{ENV['SINATRA_ENV']}, Rack: #{ ENV['RACK_ENV']}, Debug: #{ENV['DEBUG_ENV']}, SKIP: #{ENV['SKIP_HUB_VPN']}, VPN: #{ENV['VPN_TUNNEL_ENV']}"
 
 end  # configure
 
