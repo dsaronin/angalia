@@ -333,6 +333,29 @@ a#right-next
   html
     font-size: 24px
 
+// Styling for the webcam container
+.webcam-container
+  background-color: colors.$colorBGray000 // White background
+  border-radius: 1rem // Rounded corners
+  box-shadow: 0 10px 15px -3px rgba(colors.$colorBGray900, 0.1), 0 4px 6px -2px rgba(colors.$colorBGray900, 0.05) // Subtle shadow using existing grey
+  padding: 1.5em // Padding inside the container
+  max-width: 700px // Max width to keep it from getting too wide on large screens
+  width: 100% // Make it responsive
+  margin-bottom: 20px
+  display: flex
+  justify-content: center // Center the image horizontally
+  align-items: center // Center the image vertically
+
+// Styling for the webcam image itself
+#webcam-stream
+  display: block // Remove extra space below the image
+  max-width: 100% // Ensure the image scales down within its container
+  height: auto // Maintain aspect ratio
+  border-radius: 0.75rem // Slightly less rounded than the container
+  border: 2px solid colors.$colorPrimary500 // A thin border for emphasis
+  width: 640px // Base width 
+  height: 480px // Base height 
+
 // LANDSCAPE
 @media (min-width: 768px) and (max-width: 991px)
   html
