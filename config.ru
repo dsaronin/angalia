@@ -4,12 +4,28 @@ require 'sinatra'
 require_relative './app/angalia_app'
 require_relative './app/angalia_work'
 
+# --------------------------------------------------
+# info -- outputs info msg to STDERR
+# simple STDERR msg output similar to warn, abort
+# --------------------------------------------------
+  ANSI_RESET   = "\u001b[0m"
+  GREEN_BOLD    = "\u001b[1;32m"
+  def info(message)
+    msg ="INFO: #{message}"
+    $stderr.puts GREEN_BOLD + msg + ANSI_RESET
+  end
+# --------------------------------------------------
+
 configure do
   ENV['SINATRA_ENV'] ||= "development"
   ENV['RACK_ENV']    ||= "development"
   ENV['DEBUG_ENV']    ||= true.to_s  # true if DEBUG mode
   ENV['VPN_TUNNEL_ENV']  ||= false.to_s  # future
   ENV['SKIP_HUB_VPN']  ||= false.to_s   # true if SKIP malagarasi-client vpn connect
+
+  info  "ANGALIA PREREQUISITES (troubleshooting check first) bundle install; chkpackage.sh; .bashrc last lines for rvm"
+  info  "ANGALIA ENV=Sinatra: #{ENV['SINATRA_ENV']}, Rack: #{ ENV['RACK_ENV']}, Debug: #{ENV['DEBUG_ENV']}, SKIP: #{ENV['SKIP_HUB_VPN']}, VPN: #{ENV['VPN_TUNNEL_ENV']}"
+  info  "Config.ru Initializing Angalia application..."
 
 # --------------------------------------------------
   # Check system dependencies only in the "development" environment
@@ -35,10 +51,8 @@ configure do
   set :haml, { escape_html: false }
   set :session_secret, ENV['ANGALIA_TOKEN'] 
 
-  Angalia::Environ.log_info  "Config: Configuring Angalia application"
   Angalia::Environ.log_info  "Config: PUBLIC_DIR: #{PUBLIC_DIR}"
-  Angalia::Environ.log_warn  "bundle install; chkpackage.sh; .bashrc last lines for rvm"
-  Angalia::Environ.log_warn  "Config: Env=Sinatra: #{ENV['SINATRA_ENV']}, Rack: #{ ENV['RACK_ENV']}, Debug: #{ENV['DEBUG_ENV']}, SKIP: #{ENV['SKIP_HUB_VPN']}, VPN: #{ENV['VPN_TUNNEL_ENV']}"
+  Angalia::Environ.log_info  "Config: ... initialization completed."
 
 end  # configure
 

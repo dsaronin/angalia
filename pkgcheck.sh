@@ -57,28 +57,23 @@ check_packages() {
 
     # If there are packages, check if the handler command itself is available
     if ! command -v "$handler_command" &>/dev/null; then
-        echo "  Error: '$handler_command' command not found. Ensure it is installed for managing ${type_name} packages." >&2
+        echo "  ERROR: '$handler_command' not found. Install it to manage ${type_name} packages." >&2
         error_found=1
         return 1 # Indicate error in this section, no need to check individual packages
     fi
 
     for package in "${packages_to_check[@]}"; do
-        echo "Verifying ${type_name}: $package"
+        echo -n "Checking [${type_name}] $package: "
         # Construct the actual command by replacing "$package" placeholder
         # We use eval here because the command template contains shell variables to expand
         local actual_check_command="${package_check_command_template//\"\$package\"/\"$package\"}"
 
         # Execute the package check command
         if ! eval "$actual_check_command" &>/dev/null; then
-            # Adjust error message based on type for better clarity
-            if [[ "$type_name" == "DPKG" ]]; then
-                echo "  Error: Required command '$package' not found in PATH." >&2
-            else # For FLATPAK or any other type added later
-                echo "  Error: ${type_name} package '$package' is not installed." >&2
-            fi
+          echo "-- ERROR -- not installed (not found in PATH)."
             error_found=1
         else
-            echo "  '$package' is installed."
+            echo "-- confirmed installed."
         fi
     done
 }
@@ -104,10 +99,10 @@ done
 
 # Return the internal error flag
 if [[ "$error_found" -eq 1 ]]; then
-    echo "pkgcheck.sh: Some required packages are missing. Install them before running application." >&2
+    echo "pkgcheck.sh: Required packages are missing. Install before running application." >&2
     exit 1 # Indicate failure
 else
-    echo "pkgcheck.sh: All listed required packages are installed."
+    echo "pkgcheck.sh: All required packages are installed."
     exit 0 # Indicate success
 fi
 

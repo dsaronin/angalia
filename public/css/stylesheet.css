@@ -568,6 +568,10 @@ a#right-next {
   font-weight: bold;
 }
 
+.center {
+  text-align: center;
+}
+
 @media (min-width: 350px) and (max-width: 419px) {
   html {
     font-size: 18px;
@@ -584,7 +588,10 @@ a#right-next {
   }
 }
 .webcam-container {
-  max-width: 700px;
+  background-color: #546E7A;
+  padding: 2px;
+  border-radius: 0.75rem;
+  max-width: 650px;
   width: 100%;
   margin-bottom: 1em;
   display: flex;
@@ -597,7 +604,7 @@ a#right-next {
   max-width: 100%;
   height: auto;
   border-radius: 0.75rem;
-  border: 1px solid #C3CBE9;
+  border: 1px solid #263238;
   width: 640px;
   height: 480px;
 }

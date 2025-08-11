@@ -1,22 +1,7 @@
-%h3 Welcome to Angalia&trade;
-%p Angalia allows authorized caregivers to remotely monitor an elderly patient.
-%br
-%h6
-  Abilities:&ensp;
-  = form('/start_meet', method=:post) do |f|
-    = submit( 'meeton',  :value => 'Start Meeting »' )
-  &ensp; 
-  = form('/end_meet', method=:post) do |f|
-    = submit( 'meetoff',  :value => 'Stop Meeting »' )
-  &ensp;
-  = link_to( "Webcam &raquo;", "/webcam_stream", { :title => "Monitoring webcam" } )
-  = link_to( "Status &raquo;", "/status", { :title => "View system status" } )
-%br
-%br
+%i.center &diams;&ensp;live webcam feed&ensp;&diams;
 .webcam-container
   %img#webcam-stream{src: "/images/lily-of-the-valley.png", alt: "Angalia Live Webcam Feed"}
 
-%br
-%br
-%i Note: This is a working demonstration of Angalia capabilities.
+%h5 Welcome to Angalia&trade;
+%p Allowing authorized caregivers to video-meet with a patient.
 

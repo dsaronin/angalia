@@ -322,6 +322,9 @@ a#right-next
     color: colors.$FG_ERROR
     font-weight: bold
 
+.center
+  text-align: center
+
 // PORTRAIT
 @media (min-width: 350px) and (max-width: 419px)
   html
@@ -335,7 +338,10 @@ a#right-next
 
 // Styling for the webcam container
 .webcam-container
-  max-width: 700px // Max width to keep it from getting too wide on large screens
+  background-color: colors.$colorBGray600
+  padding: 2px
+  border-radius: 0.75rem // Slightly less rounded than the container
+  max-width: 650px // Max width to keep it from getting too wide on large screens
   width: 100% // Make it responsive
   margin-bottom: 1em
   display: flex
@@ -348,7 +354,7 @@ a#right-next
   max-width: 100% // Ensure the image scales down within its container
   height: auto // Maintain aspect ratio
   border-radius: 0.75rem // Slightly less rounded than the container
-  border: 1px solid colors.$colorPrimary100 // A thin border for emphasis
+  border: 1px solid colors.$colorBGray900 // A thin border for emphasis
   width: 640px // Base width 
   height: 480px // Base height 
 
