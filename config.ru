@@ -37,14 +37,15 @@ configure do
 
   Angalia::Environ.log_info  "Config: Configuring Angalia application"
   Angalia::Environ.log_info  "Config: PUBLIC_DIR: #{PUBLIC_DIR}"
-  Angalia::Environ.log_info  "Config: Env=Sinatra: #{ENV['SINATRA_ENV']}, Rack: #{ ENV['RACK_ENV']}, Debug: #{ENV['DEBUG_ENV']}, SKIP: #{ENV['SKIP_HUB_VPN']}, VPN: #{ENV['VPN_TUNNEL_ENV']}"
+  Angalia::Environ.log_warn  "bundle install; chkpackage.sh; .bashrc last lines for rvm"
+  Angalia::Environ.log_warn  "Config: Env=Sinatra: #{ENV['SINATRA_ENV']}, Rack: #{ ENV['RACK_ENV']}, Debug: #{ENV['DEBUG_ENV']}, SKIP: #{ENV['SKIP_HUB_VPN']}, VPN: #{ENV['VPN_TUNNEL_ENV']}"
 
 end  # configure
 
 run Angalia::AngaliaApp
 
 
-# notes
+# notes for execution
 # thin -R config.ru -a 0.0.0.0 -p 8080 start
 #
 # http://localhost:8080/
