@@ -52,7 +52,9 @@ configure do
   set :session_secret, ENV['ANGALIA_TOKEN'] 
 
   Angalia::Environ.log_info  "Config: PUBLIC_DIR: #{PUBLIC_DIR}"
-  Angalia::Environ.log_info  "Config: ... initialization completed."
+  Angalia::Environ.log_warn  "Config: #{ANGALIA.do_version} ... initialization completed."
+  
+  # outputs name, version number
 
 end  # configure
 
