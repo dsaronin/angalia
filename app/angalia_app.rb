@@ -112,10 +112,10 @@ class AngaliaApp < Sinatra::Application
 
   # ------------------------------------------------------------
   # Start Jitsi Meet Session
-  # POST /start_meet
+  # GET /start_meet
   # Triggers the Angalia system to initiate a Jitsi Meet session.
   # ------------------------------------------------------------
- post '/start_meet' do
+  get '/start_meet' do
 
    start_thread = Thread.new do
      begin
@@ -149,14 +149,14 @@ class AngaliaApp < Sinatra::Application
    flash[:notice] = "Starting video meeting... connecting shortly."
    redirect '/' # Redirect to the home page immediately
 
- end # post /start_meet
+ end # get /start_meet
 
  # ------------------------------------------------------------
  # End Jitsi Meet Session
- # POST /end_meet
+ # GET /end_meet
  # Triggers the Angalia system to terminate the active Jitsi Meet session.
  # ------------------------------------------------------------
- post '/end_meet' do
+ get '/end_meet' do
 
    stop_thread = Thread.new do
      begin
@@ -189,7 +189,7 @@ class AngaliaApp < Sinatra::Application
    flash[:notice] = "Terminating video meeting... disconnecting shortly."
    redirect '/' # Redirect to the home page immediately
 
- end # post /end_meet
+ end # get /end_meet
 
 
   # ------------------------------------------------------------
