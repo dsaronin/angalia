@@ -124,9 +124,9 @@ class AngaliaWork
   def start_meet
     Environ.log_info("Attempting Jitsi Meet session...")
     begin
-      @my_openvpn.start_vpn   # make sure vpn has started
-      @my_webcam.stop_stream  # Stop the webcam stream.
-      @my_monitor.turn_on   # Turn on the monitor.
+      @my_openvpn.start_vpn   # make sure vpn active
+      stop_livestream         # disable livestream
+      @my_monitor.turn_on     # Turn on monitor
 
       # Start the Jitsi Meet session in Chromium
       @my_meet_view.start_session(Environ.jitsi_meet_room_url)
@@ -157,7 +157,7 @@ class AngaliaWork
     begin
       @my_meet_view.stop_session # Stop the Jitsi Meet session
       @my_monitor.turn_off     # Turn off the monitor
-      @my_webcam.start_stream  # Restart the always-on webcam stream
+      start_livestream         # Reenable livestream
       
          # disconnect the vpn when we're debugging system locally
       if Environ::DEBUG_MODE && Environ::DEBUG_VPN_OFF && Environ::IS_DEVELOPMENT
@@ -176,34 +176,43 @@ class AngaliaWork
   end # end_meet
 
   # ------------------------------------------------------------
-  # webcam_on -- starts webcam streaming
+  # start_livestream -- High-level command to begin live webcam streaming.
+  # Delegates to the Webcam singleton to handle all pipe and ffmpeg management.
   # ------------------------------------------------------------
-  def webcam_on
-    @my_webcam.start_stream
+  def start_livestream
+    Environ.log_info("AngaliaWork: Request to start live webcam streaming.")
+    @my_webcam.start_livestream
+    Environ.log_info("AngaliaWork: Live webcam streaming initiated.")
   end
 
   # ------------------------------------------------------------
-  # webcam_off -- stops webcam streaming
+  # stop_livestream -- High-level command to terminate live webcam streaming.
+  # Delegates to the Webcam singleton to stop ffmpeg and close the pipe.
   # ------------------------------------------------------------
-  def webcam_off
-    @my_webcam.stop_stream
+  def stop_livestream
+    Environ.log_info("AngaliaWork: Request to stop live webcam streaming.")
+    @my_webcam.stop_livestream
+    Environ.log_info("AngaliaWork: Live webcam streaming terminated.")
   end
 
   # ------------------------------------------------------------
-  # start_webcam_stream  -- starts webcam & returns streaming path
+  # get_livestream_frame -- Retrieves a single JPEG frame from the webcam stream.
+  # This is called repeatedly by angalia_app.rb for MJPEG streaming.
+  # Returns:
+  #   String: The binary data of a complete JPEG frame if available.
+  #   nil: If no complete frame is found within the timeout.
   # ------------------------------------------------------------
-  def start_webcam_stream
-    webcam_on
-    return @my_webcam.get_pipe_path
+  def get_livestream_frame
+    @my_webcam.get_stream_frame
   end
 
   # ------------------------------------------------------------
-  # get_webcam_frame -- Extract and Return a Single Frame
+  # is_livestreaming? -- Checks if the webcam is currently streaming.
+  # Delegates to the Webcam singleton to determine its streaming status.
   # ------------------------------------------------------------
-  def get_webcam_frame
-    return @my_webcam.get_stream_frame
-  end  # get_webcam_frame
-
+  def is_livestreaming?
+    @my_webcam.streaming?
+  end
   # ------------------------------------------------------------
   # ------------------------------------------------------------
 

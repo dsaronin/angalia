@@ -65,49 +65,46 @@ class AngaliaApp < Sinatra::Application
   # ------------------------------------------------------------
   # ------------------------------------------------------------
   get '/webcam_stream' do
-
-
     # Set the Content-Type header for MJPEG streaming.
     content_type 'multipart/x-mixed-replace; boundary=--BoundaryString'
 
     stream do |out|
-      # make sure streaming is active; returns streaming_pipe
-      streaming_pipe_path = ANGALIA.start_webcam_stream
+      begin
+        # Check if streaming is active; start it if not.
+        ANGALIA.start_webcam_stream
 
-      begin  # Continuously read and send frames.
-        File.open(streaming_pipe_path, 'rb') do |pipe|
+        # Continuously read and send frames.
+        loop do
+          # Retrieve the frame data from the Webcam singleton.
+          frame_data = ANGALIA.get_webcam_frame
+          
+          if frame_data
+            out << "--BoundaryString\r\n"
+            out << "Content-Type: image/jpeg\r\n"
+            out << "Content-Length: #{frame_data.length}\r\n"
+            out << "\r\n"
+            out << frame_data
+            out << "\r\n"
+          else
+            # If no frame is available, wait briefly to prevent busy-waiting.
+            sleep 0.1    # The sleep duration can be tuned.
+          end  # fi .. if
+
+        end  # continuous frame-reading loop 
         
-          # identify JPEG frame boundaries within the pipe's output
-          while true
-            frame_data = ANGALIA.get_webcam_frame 
-
-            if frame_data
-              out << "--BoundaryString\r\n"
-              out << "Content-Type: image/jpeg\r\n"
-              out << "Content-Length: #{frame_data.length}\r\n"
-              out << "\r\n"
-              out << frame_data
-              out << "\r\n"
-            else
-              # If no frame is available, wait briefly to prevent busy-waiting
-              sleep 0.1
-            end  # fi
-          end # while
-        end # File.open
+     # =============
       rescue IOError, Errno::EPIPE => e
-        # =============
         # Handle client disconnection or pipe errors gracefully.
         Environ.log_warn "Webcam stream client disconnected / pipe error: #{e.message}"
-        # =============
       rescue => e
-        # =============
         # Catch any other unexpected errors during streaming.
         Environ.log_error "Error streaming webcam: #{e.message}"
-        # =============
-      end # begin ... rescue block
-    end # stream do out block
+      end  # begin ... rescue block
+     # =============
+   
+    end   # stream do out block
 
-  end # get /webcam_stream
+  end  # get /webcam_stream
   # ------------------------------------------------------------
 
   # ------------------------------------------------------------

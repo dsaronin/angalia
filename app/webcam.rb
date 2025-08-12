@@ -10,6 +10,7 @@ require 'singleton'
 require 'open3' # Required for executing system commands and capturing output
 require_relative 'environ' # Required for Environ.log_info, Environ::MY_WEBCAM_NAME, Environ::WEBCAM_PIPE
 require_relative 'angalia_error' # Required for AngaliaError::WebcamError, AngaliaError::WebcamOperationError
+require_relative 'mockframe' # has the mock frame data (large)
 require 'base64'
 require 'timeout' # Although IO.select handles the timeout, Timeout module useful other operations.
 
@@ -100,6 +101,40 @@ class Webcam
   end # verify_configuration
 
   # ------------------------------------------------------------
+  # start_livestream -- High-level method to begin live webcam streaming.
+  # Ensures the named pipe is ready and starts the ffmpeg process.
+  # This method is idempotent; does nothing if streaming already active.
+  # Args:
+  #   current_client_count (Integer): The number of active clients requesting the stream.
+  # Raises AngaliaError::WebcamOperationError on failure.
+  # ------------------------------------------------------------
+  def start_livestream(current_client_count)
+      return true if streaming?
+
+    begin
+      Environ.log_info("Webcam: Initiating livestream sequence...")
+
+      start_pipe_reading # Ensures named pipe ready for reading/writing
+      start_stream # Start ffmpeg process writing to the pipe
+
+      Environ.log_info("Webcam: ...Livestream sequence initiated")
+      return true
+ 
+     # RESCUE BLOCK =======================================================
+     rescue AngaliaError::WebcamOperationError => e
+      Environ.log_error("Webcam: Failed Initiating livestream sequence: #{e.message}")
+      clear_state # Ensure a clean state on failure
+      raise # Re-raise for AngaliaWork to handle
+    rescue => e
+      msg = "Webcam: Unexpected error during livestream initiation: #{e.message}"
+      Environ.log_error(msg)
+      clear_state
+      raise AngaliaError::WebcamOperationError.new(msg) # Wrap in our specific error
+    end 
+    # END RESCUE BLOCK ====================================================
+   end # start_livestream
+
+  # ------------------------------------------------------------
       # Construct ffmpeg command.
       # -y: Overwrite output without asking.
       # -f v4l2: Input format.
@@ -112,6 +147,7 @@ class Webcam
   # ------------------------------------------------------------
       FFMPEG_START_CMD = "ffmpeg -y -f v4l2 -i /dev/#{Environ::MY_WEBCAM_NAME} -s 640x480 -r 24 -an -f mjpeg #{Environ::WEBCAM_PIPE_PATH}"
       FFMPEG_ACTIVE_CHK  = "pgrep ffmpeg"
+
   # ------------------------------------------------------------
   # start_stream -- Initiates low-bandwidth MJPEG stream to named pipe.
   # runs ffmpeg in background, captures PID.
@@ -151,6 +187,42 @@ class Webcam
   end # start_stream
 
   # ------------------------------------------------------------
+  # stop_livestream -- High-level method to terminate live webcam streaming.
+  # Stops the ffmpeg process and closes the named pipe only if no clients remain.
+  # Args:
+  #   current_client_count (Integer): The number of active clients after this request.
+  # Raises AngaliaError::WebcamOperationError on failure.
+  # ------------------------------------------------------------
+  def stop_livestream(current_client_count)
+    # Only stop the actual stream if no clients are active.
+    # && streaming is still active (don't try to stop an already stopped process)
+    if current_client_count < 1 && streaming?
+      Environ.log_info("Webcam: terminating livestream (#{current_client_count} clients)...")
+      begin
+        stop_stream        # Stop the ffmpeg process
+        stop_pipe_reading  # Close the named pipe
+        Environ.log_info("Webcam: ...Livestream sequence terminated.")
+
+      # RESCUE BLOCK =======================================================
+      rescue AngaliaError::WebcamOperationError => e
+        Environ.log_error("Webcam: Failed terminating livestream sequence: #{e.message}")
+        clear_state # Attempt to clean up state even if an error occurs
+        raise # Re-raise for AngaliaWork to handle
+      rescue => e
+        msg = "Webcam: Unexpected error during livestream termination: #{e.message}"
+        Environ.log_error(msg)
+        clear_state
+        raise AngaliaError::WebcamOperationError.new(msg) # Wrap in our specific error
+      end
+      # END RESCUE BLOCK ====================================================
+    else
+      Environ.log_info("Webcam: Stream remains active (client count: #{current_client_count}).")
+    end  # fi .. client_count >= 1
+    return true
+  end # stop_livestream
+
+
+  # ------------------------------------------------------------
       FFMPEG_KILL_ALL  = "pkill -9 ffmpeg || true"
       KILL_FIFO  =  "rm /tmp/CAMOUT || true"
   # ------------------------------------------------------------
@@ -181,19 +253,6 @@ class Webcam
   end
 
   # ------------------------------------------------------------
-  # Mock data for a single, tiny JPEG frame (e.g., a 1x1 black pixel JPEG)
-  # This is a base64 encoded string of a very small JPEG.
-  # In a real scenario, this would come from the named pipe.
-  # ------------------------------------------------------------
-  MOCK_JPEG_FRAME_BASE64 = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAD/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKgAD//Z"
-  # ------------------------------------------------------------
-  # This method would simulate reading a frame from the pipe.
-  # For testing, it just decodes our mock data.
-  # Example usage (for testing):
-  # frame = webcam_instance.get_mock_webcam_frame
-  # puts "Mock frame length: #{frame.length} bytes"
-  # puts "Mock frame encoding: #{frame.encoding}"
-  # ------------------------------------------------------------
   # get_mock_webcam_frame  -- returns a static mocked up frame
   # ------------------------------------------------------------
   def get_mock_webcam_frame
@@ -219,7 +278,7 @@ class Webcam
     JPEG_END   = "\xFF\xD9".force_encoding('ASCII-8BIT')
   # ------------------------------------------------------------
   def get_stream_frame(timeout_seconds = Environ::WEBCAM_READ_TIMEOUT_SECONDS)
-    return get_mock_webcam_frame 
+    # return get_mock_webcam_frame 
 
     # Ensure the pipe is open before attempting to read
     unless @pipe_io && !@pipe_io.closed?
@@ -300,7 +359,7 @@ class Webcam
   def start_pipe_reading(pipe_path = get_pipe_path)
     @pipe_io = File.open(pipe_path, 'rb')
     @pipe_io.sync = true # Ensure reads are immediate
-    Environ.log_info "Webcam: #{pipe_path} opened for reading"
+    Environ.log_info "Webcam: stream pipe #{pipe_path} opened"
     
     rescue => e
       raise ConfigurationError.new("Failed to open #{e.message}")
@@ -312,7 +371,7 @@ class Webcam
   def stop_pipe_reading
     if @pipe_io && !@pipe_io.closed?
       @pipe_io.close
-      Environ.log_info "Webcam: stream pipe closed."
+      Environ.log_info "Webcam: stream pipe closed"
     end
     initialize_stream
   end
