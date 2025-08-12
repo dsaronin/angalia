@@ -118,9 +118,9 @@ class Webcam
   # Raises AngaliaError::WebcamOperationError if stream fails to start.
   # ------------------------------------------------------------
   def start_stream
-    Environ.log_info("Webcam: Starting low-bandwidth stream.")
+    return if streaming?  # if already started, nothing more to do
     begin
-      stop_stream    # force existing ffmpegs to stop
+      Environ.log_info("Webcam: Starting low-bandwidth stream.")
 
       # Execute command and capture PID using Open3.popen2e for robust process management.
       @ffmpeg_stdin, @ffmpeg_stdout_stderr, @ffmpeg_wait_thr = Open3.popen2e(FFMPEG_START_CMD)
@@ -134,7 +134,6 @@ class Webcam
         raise AngaliaError::WebcamOperationError.new(msg)
       end
 
-      @is_streaming = true # Update state
       Environ.log_info("Webcam: Stream started (PID: #{@ffmpeg_pid}).")
 
       # RESCUE BLOCK =======================================================
@@ -225,7 +224,7 @@ class Webcam
     # Ensure the pipe is open before attempting to read
     unless @pipe_io && !@pipe_io.closed?
       # Log an error but don't raise here, as AngaliaWork expects nil if not ready.
-      Environ.log_error "Webcam stream pipe is not open or has been closed."
+      Environ.log_error "Webcam stream pipe is not open."
       return nil
     end
 
@@ -239,7 +238,7 @@ class Webcam
         chunk = @pipe_io.read_nonblock(4096) # Read up to 4KB non-blocking
 
         if chunk.nil? # EOF reached, pipe closed by writer
-          raise OperationError.new("Webcam stream pipe closed unexpectedly by writer.")
+          raise OperationError.new("Webcam stream pipe closed unexpectedly.")
         end
 
         @buffer << chunk
@@ -298,7 +297,7 @@ class Webcam
   # start_pipe_reading  -- initializes, manages named pipe
   # called when webcam streaming is started
   # ------------------------------------------------------------
-  def start_pipe_reading(pipe_path = Environ::WEBCAM_PIPE_PATH)
+  def start_pipe_reading(pipe_path = get_pipe_path)
     @pipe_io = File.open(pipe_path, 'rb')
     @pipe_io.sync = true # Ensure reads are immediate
     Environ.log_info "Webcam: #{pipe_path} opened for reading"

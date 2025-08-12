@@ -568,6 +568,10 @@ a#right-next {
   font-weight: bold;
 }
 
+.center {
+  text-align: center;
+}
+
 @media (min-width: 350px) and (max-width: 419px) {
   html {
     font-size: 18px;
@@ -583,6 +587,28 @@ a#right-next {
     font-size: 24px;
   }
 }
+.webcam-container {
+  background-color: #546E7A;
+  padding: 2px;
+  border-radius: 0.75rem;
+  max-width: 650px;
+  width: 100%;
+  margin-bottom: 1em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#webcam-stream {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  border: 1px solid #263238;
+  width: 640px;
+  height: 480px;
+}
+
 @media (min-width: 768px) and (max-width: 991px) {
   html {
     font-size: 20px;

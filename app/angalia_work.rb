@@ -190,9 +190,10 @@ class AngaliaWork
   end
 
   # ------------------------------------------------------------
-  # webcam_stream_pipe_path  -- returns fully formed path
+  # start_webcam_stream  -- starts webcam & returns streaming path
   # ------------------------------------------------------------
-  def webcam_stream_pipe_path
+  def start_webcam_stream
+    webcam_on
     return @my_webcam.get_pipe_path
   end
 
