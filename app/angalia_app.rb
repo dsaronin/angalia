@@ -14,6 +14,7 @@ require_relative 'tag_helpers'
 require 'sinatra/form_helpers' # Useful forms on the home or status page
 require 'rack-flash' # displaying success/error messages to the user
 require 'yaml'       # FUTURE: use by Environ for configuration loading
+require 'thread'     # Mutex
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++
 module Angalia # Define the top-level module
@@ -30,6 +31,13 @@ class AngaliaApp < Sinatra::Application
   
  # Disable show_exceptions in development to ensure 'error do' block is hit
  # set :show_exceptions, false # used for testing
+
+  # MUTEX SYNCED VALUES =======================================================
+  # Initialize the global client counter and its mutex
+  @@livestream_client_count = 0
+  @@is_jitsimeeting = false # Initialize the Jitsi meeting flag
+  @@livestream_mutex = Mutex.new
+  # =============================================================================
 
   # ------------------------------------------------------------
   # Web Server Routes
@@ -67,15 +75,35 @@ class AngaliaApp < Sinatra::Application
     # Set the Content-Type header for MJPEG streaming.
     content_type 'multipart/x-mixed-replace; boundary=--BoundaryString'
 
+    # MUTEX BLOCK =======================================================
+    # Acquire a lock to safely modify the client count
+    @@livestream_mutex.synchronize do
+      # Deny access if a Jitsi meeting is currently active
+      if @@is_jitsimeeting
+        status 403 # Forbidden
+        Environ.log_info("App: Denying livestream request; Jitsi meeting is active.")
+        return "Jitsi meeting is currently active. Livestream unavailable."
+      end
+
+      if @@livestream_client_count >= 1
+        # Deny access if a client is already streaming (single-client policy)
+        status 403 # Forbidden
+        return "Livestream already active for another client."
+      end
+      @@livestream_client_count += 1
+      Environ.log_info("App: Livestream client connected. Count: #{@@livestream_client_count}")
+    end  # mutex lock
+    # MUTEX BLOCK =======================================================
+
     stream do |out|
       begin
         # Check if streaming is active; start it if not.
-        ANGALIA.start_webcam_stream
+        ANGALIA.start_livestream(@@livestream_client_count)
 
         # Continuously read and send frames.
         loop do
           # Retrieve the frame data from the Webcam singleton.
-          frame_data = ANGALIA.get_webcam_frame
+          frame_data = ANGALIA.get_livestream_frame
           
           if frame_data
             out << "--BoundaryString\r\n"
@@ -91,16 +119,33 @@ class AngaliaApp < Sinatra::Application
 
         end  # continuous frame-reading loop 
         
-     # =============
+        # RESCUE BLOCK =======================================================
       rescue IOError, Errno::EPIPE => e
         # Handle client disconnection or pipe errors gracefully.
         Environ.log_warn "Webcam stream client disconnected / pipe error: #{e.message}"
       rescue => e
         # Catch any other unexpected errors during streaming.
         Environ.log_error "Error streaming webcam: #{e.message}"
-      end  # begin ... rescue block
-     # =============
-   
+
+      ensure
+        # MUTEX BLOCK =======================================================
+        # IMPORTANT: Ensure the counter is decremented and webcam is stopped on stream end/error
+        @@livestream_mutex.synchronize do
+          if @@livestream_client_count > 0
+            @@livestream_client_count -= 1
+            Environ.log_info("App: Livestream client disconnected. Remaining count: #{@@livestream_client_count}")
+            # Tell AngaliaWork/Webcam to stop the stream if no clients remain
+            ANGALIA.stop_livestream(@@livestream_client_count)
+          else
+            Environ.log_warn("App: Disconnect called when client count was already 0 or less.")
+          end  # fi .. else.. if
+        end  # mutex block
+          # MUTEX BLOCK =======================================================
+
+      end  # rescue block
+
+        # END RESCUE BLOCK =======================================================
+
     end   # stream do out block
 
   end  # get /webcam_stream
@@ -113,6 +158,17 @@ class AngaliaApp < Sinatra::Application
   # ------------------------------------------------------------
   get '/start_meet' do
 
+   # MUTEX BLOCK =======================================================
+   # Proactively reset the livestream client count in AngaliaApp
+   @@livestream_mutex.synchronize do
+     if @@livestream_client_count > 0
+       Environ.log_info("App: Resetting livestream client count from #{@@livestream_client_count} to 0 due to Meet session start.")
+       @@livestream_client_count = 0
+     end  # reset livestream count
+     @@is_jitsimeeting = true # Set Jitsi meeting flag to true
+   end  # mutex
+   # MUTEX BLOCK =======================================================
+
    start_thread = Thread.new do
      begin
        if ANGALIA.start_meet
@@ -121,28 +177,24 @@ class AngaliaApp < Sinatra::Application
          Environ.log_error "HUB: Jitsi Meet failed to initiate as background task.."
        end
 
+      # RESCUE BLOCK =======================================================
      rescue ConfigurationError => e
-       # =============
-       # Handle configuration-related errors.
        Environ.log_error "HUB: start_meet configuration error (background task): #{e.message}"
-       # =============
+       
      rescue OperationError => e
-       # =============
-       # Handle operational errors during the process.
        Environ.log_error "HUB: Operation error, start_meet (background task): #{e.message}"
-       # =============
+       
      rescue => e
-       # =============
-       # Catch any other unexpected errors.
        Environ.log_error "HUB: unexpected error starting Jitsi Meet (background task): #{e.message}"
-       # =============
+       
      end # begin
+      # END RESCUE BLOCK ===================================================
+
    end # Thread.new
 
    # start_thread.join   # waits for completion
 
-   # Immediately send a response indicating the action has been triggered.
-   flash[:notice] = "Starting video meeting... connecting shortly."
+   flash[:notice] = "Starting video meeting..."
    redirect '/' # Redirect to the home page immediately
 
  end # get /start_meet
@@ -161,28 +213,32 @@ class AngaliaApp < Sinatra::Application
        else
          Environ.log_error "HUB: Video Meet failed to terminate in background."
        end
+
+        # RESCUE BLOCK =======================================================
      rescue ConfigurationError => e
-       # =============
-       # Handle configuration-related errors.
        Environ.log_error "HUB: Configuration error during end_meet (background task): #{e.message}"
-       # =============
+       
      rescue OperationError => e
-       # =============
-       # Handle operational errors during the process.
        Environ.log_error "HUB: Operation error during end_meet (background task): #{e.message}"
-       # =============
+       
      rescue => e
-       # =============
-       # Catch any other unexpected errors.
        Environ.log_error "HUB: Unexpected error at end_meet (background task): #{e.message}"
-       # =============
-     end # begin
+     end 
+        # END RESCUE BLOCK =======================================================
+
+    ensure
+      # MUTEX BLOCK =======================================================
+      @@livestream_mutex.synchronize do
+        @@is_jitsimeeting = false # Reset Jitsi meeting flag to false
+        Environ.log_info("App: Jitsi meeting flag set to false.")
+      end  # MUTEX
+      # MUTEX BLOCK =======================================================
+
    end # Thread.new
 
    # stop_thread.join   # waits for completion
 
-   # Immediately send a response indicating the action has been triggered.
-   flash[:notice] = "Terminating video meeting... disconnecting shortly."
+   flash[:notice] = "Terminating video meeting..."
    redirect '/' # Redirect to the home page immediately
 
  end # get /end_meet
@@ -194,7 +250,6 @@ class AngaliaApp < Sinatra::Application
   # Displays current system status information for debugging/monitoring.
   # ------------------------------------------------------------
   get '/status' do
-    # ANGALIA.do_status should return a hash or object with relevant data.
     @status_info = ANGALIA.do_status 
     flash[:error] = @status_info
     redirect '/'
