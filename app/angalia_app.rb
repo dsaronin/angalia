@@ -2,23 +2,22 @@
 # Angalia: A Remote Elder Monitoring System Client
 # Copyright (c) 2025 David S Anderson, All Rights Reserved
 #
+# ------------------------------------------------------------
 # angalia_app.rb  -- starting point for sinatra web app
-#
+# Assumes AngaliaWork and Environ are loaded via config.ru and available globally
+# through the ANGALIA constant.
+# ------------------------------------------------------------
 
 require 'sinatra'
 require 'haml'
 require_relative 'tag_helpers'
-require 'sinatra/form_helpers' # Useful for potential forms on the home or status page
-require 'rack-flash' # For displaying success/error messages to the user
-require 'yaml' # Keep this, as it might be used by Environ or other configuration loading
-
-# Assumes AngaliaWork and Environ are loaded via config.ru and available globally
-# through the ANGALIA constant.
+require 'sinatra/form_helpers' # Useful forms on the home or status page
+require 'rack-flash' # displaying success/error messages to the user
+require 'yaml'       # FUTURE: use by Environ for configuration loading
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++
 module Angalia # Define the top-level module
 # +++++++++++++++++++++++++++++++++++++++++++++++++
-
 
 class AngaliaApp < Sinatra::Application
   helpers Sinatra::AssetHelpers # Explicitly include your AssetHelpers
@@ -36,9 +35,11 @@ class AngaliaApp < Sinatra::Application
   # Web Server Routes
   # ------------------------------------------------------------
 
-  # 1. Home Page
+  # ------------------------------------------------------------
   # GET /
+  # Home Page
   # Displays the main caregiver control panel with action buttons.
+  # ------------------------------------------------------------
   get '/' do
     haml :index
   end # get /
@@ -51,10 +52,9 @@ class AngaliaApp < Sinatra::Application
     haml :about
   end
 
-
   # ------------------------------------------------------------
-  # View Webcam Stream
   # GET /webcam_stream
+  # View Webcam Stream
   # Serves a continuous MJPEG stream from the Angalia webcam.
   # ------------------------------------------------------------
   # Uses Sinatra's streaming capabilities to send continuous data.
@@ -62,7 +62,6 @@ class AngaliaApp < Sinatra::Application
   # A more robust implementation would parse for 0xFFD8 (start) and 0xFFD9 (end) markers.
   # For this initial implementation, we'll assume ANGALIA.get_webcam_frame
   # handles reading a complete frame from the pipe.
-  # ------------------------------------------------------------
   # ------------------------------------------------------------
   get '/webcam_stream' do
     # Set the Content-Type header for MJPEG streaming.
@@ -108,8 +107,8 @@ class AngaliaApp < Sinatra::Application
   # ------------------------------------------------------------
 
   # ------------------------------------------------------------
-  # Start Jitsi Meet Session
   # GET /start_meet
+  # Start Jitsi Meet Session
   # Triggers the Angalia system to initiate a Jitsi Meet session.
   # ------------------------------------------------------------
   get '/start_meet' do
@@ -149,8 +148,8 @@ class AngaliaApp < Sinatra::Application
  end # get /start_meet
 
  # ------------------------------------------------------------
- # End Jitsi Meet Session
  # GET /end_meet
+ # End Jitsi Meet Session
  # Triggers the Angalia system to terminate the active Jitsi Meet session.
  # ------------------------------------------------------------
  get '/end_meet' do
@@ -190,8 +189,8 @@ class AngaliaApp < Sinatra::Application
 
 
   # ------------------------------------------------------------
-  # View System Status (Developer/Debug)
   # GET /status
+  # View System Status (Developer/Debug)
   # Displays current system status information for debugging/monitoring.
   # ------------------------------------------------------------
   get '/status' do

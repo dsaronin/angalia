@@ -2,22 +2,25 @@
 # Angalia: A Remote Elder Monitoring Hub
 # Copyright (c) 2025 David S Anderson, All Rights Reserved
 #
+# ------------------------------------------------------------
 # class AngaliaWork -- top-level control for doing everything
 # accessed either from the CLI controller or the WEB i/f controller
-#
+# ------------------------------------------------------------
 
   require_relative 'environ'
-  require_relative 'webcam' # Required for Webcam Singleton
-  require_relative 'monitor' # Required for Monitor Singleton
-  require_relative 'meet_view' # Required for MeetView Singleton
-  require_relative 'openvpn' # Required for OpenVPN Singleton
-  require_relative 'angalia_error' # Required for AngaliaError classes
+  require_relative 'webcam'        # for Webcam Singleton
+  require_relative 'monitor'       # for Monitor Singleton
+  require_relative 'meet_view'     # for MeetView Singleton
+  require_relative 'openvpn'       # for OpenVPN Singleton
+  require_relative 'angalia_error' # for AngaliaError classes
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++
 module Angalia # Define the top-level module
 # +++++++++++++++++++++++++++++++++++++++++++++++++
 
 class AngaliaWork
+
+  APPNAME_VERSION = Environ.app_name + " v" + Environ.angalia_version
 
   # ------------------------------------------------------------
   # initialize -- creates a new AngaliaWork object; inits environ
@@ -31,7 +34,8 @@ class AngaliaWork
   # This is the primary point for all critical device configurations.
   # ------------------------------------------------------------
   def setup_work()
-    Environ.log_info("Starting ...")
+    Environ.log_info("AngaliaWork: " + APPNAME_VERSION + ": starting setup...")
+
     begin
       # Instantiate Singletons here. Their initialize methods will call verify_configuration.
       @my_monitor   = Monitor.instance
@@ -44,17 +48,19 @@ class AngaliaWork
         @my_openvpn.start_vpn   # make sure vpn has started
       end
 
-      Environ.log_info("AngaliaWork: All device configurations verified successfully.")
-      # Environ.put_info FlashManager.show_defaults
+      Environ.log_info("AngaliaWork: All device configurations successful")
+
+      # RESCUE BLOCK =======================================================
     rescue AngaliaError::MajorError => e
       Environ.put_and_log_error("AngaliaWork: Critical startup error: #{e.message}")
-      # Re-raise the error to the top-level CLI or web server
-      # to prevent the application from running in a broken state.
+      # Re-raise error to top-level control; prevents application in a broken state
       raise
     rescue => e
-      Environ.put_and_log_error("AngaliaWork: An unexpected error occurred during setup: #{e.message}")
+      Environ.put_and_log_error("AngaliaWork: Unexpected error during setup: #{e.message}")
       raise # Re-raise any other unexpected errors
-    end
+    end  # rescue block
+      # END RESCUE BLOCK ====================================================
+
   end # setup_work
 
   # ------------------------------------------------------------
@@ -102,9 +108,8 @@ class AngaliaWork
   # do_version -- displays then returns angalia version
   # ------------------------------------------------------------
   def do_version
-    sts = Environ.app_name + " v" + Environ.angalia_version
-    Environ.put_info sts
-    return sts
+    Environ.put_info APPNAME_VERSION
+    return APPNAME_VERSION
   end
 
   # ------------------------------------------------------------
@@ -125,7 +130,7 @@ class AngaliaWork
     Environ.log_info("Attempting Jitsi Meet session...")
     begin
       @my_openvpn.start_vpn   # make sure vpn active
-      stop_livestream         # disable livestream
+      stop_livestream( 0 )         # disable livestream
       @my_monitor.turn_on     # Turn on monitor
 
       # Start the Jitsi Meet session in Chromium
@@ -157,7 +162,6 @@ class AngaliaWork
     begin
       @my_meet_view.stop_session # Stop the Jitsi Meet session
       @my_monitor.turn_off     # Turn off the monitor
-      start_livestream         # Reenable livestream
       
          # disconnect the vpn when we're debugging system locally
       if Environ::DEBUG_MODE && Environ::DEBUG_VPN_OFF && Environ::IS_DEVELOPMENT
@@ -178,21 +182,25 @@ class AngaliaWork
   # ------------------------------------------------------------
   # start_livestream -- High-level command to begin live webcam streaming.
   # Delegates to the Webcam singleton to handle all pipe and ffmpeg management.
+  # Args:
+  #   current_client_count (Integer): The number of active clients requesting the stream.
   # ------------------------------------------------------------
-  def start_livestream
-    Environ.log_info("AngaliaWork: Request to start live webcam streaming.")
-    @my_webcam.start_livestream
-    Environ.log_info("AngaliaWork: Live webcam streaming initiated.")
+  def start_livestream(current_client_count)
+    Environ.log_info("AngaliaWork: Request -- start livestream")
+    @my_webcam.start_livestream(current_client_count)
+    Environ.log_info("AngaliaWork: Livestream initiated")
   end
 
   # ------------------------------------------------------------
   # stop_livestream -- High-level command to terminate live webcam streaming.
   # Delegates to the Webcam singleton to stop ffmpeg and close the pipe.
+  # Args:
+  #   current_client_count (Integer): The number of active clients after this request.
   # ------------------------------------------------------------
-  def stop_livestream
-    Environ.log_info("AngaliaWork: Request to stop live webcam streaming.")
-    @my_webcam.stop_livestream
-    Environ.log_info("AngaliaWork: Live webcam streaming terminated.")
+  def stop_livestream(current_client_count)
+    Environ.log_info("AngaliaWork: Request -- stop livestream")
+    @my_webcam.stop_livestream(current_client_count)
+    Environ.log_info("AngaliaWork: Livestream terminated")
   end
 
   # ------------------------------------------------------------
