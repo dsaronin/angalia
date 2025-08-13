@@ -85,15 +85,15 @@ class AngaliaApp < Sinatra::Application
     @@livestream_mutex.synchronize do
       # Deny access if a Jitsi meeting is currently active
       if @@is_jitsimeeting
-        status 403 # Forbidden
         Environ.log_info("App: Denying livestream request; Jitsi meeting is active.")
-        return "Jitsi meeting is currently active. Livestream unavailable."
-      end
+        flash[:notice] = "Video meeting is active; Livestream unavailable."
+        redirect '/'
+     end
 
       if @@livestream_client_count >= 1
-        # Deny access if a client is already streaming (single-client policy)
-        status 403 # Forbidden
-        return "Livestream already active for another client."
+        Environ.log_info("App: Denying livestream request; stream already active for another client.")
+        flash[:notice] = "Livestream already active for another client."
+        redirect '/'
       end
       @@livestream_client_count += 1
       Environ.log_info("App: Livestream client connected. Count: #{@@livestream_client_count}")
@@ -247,6 +247,31 @@ class AngaliaApp < Sinatra::Application
    redirect '/' # Redirect to the home page immediately
 
  end # get /end_meet
+
+  # ------------------------------------------------------------
+  # GET /weboff
+  # Forces the livestream to stop and resets client count to zero.
+  # This provides a manual override to stop the stream.
+  # ------------------------------------------------------------
+  get '/weboff' do
+    @@livestream_mutex.synchronize do
+      Environ.log_warn("App: '/weboff' Forcing livestream off; (#{@@livestream_client_count})")
+      @@livestream_client_count = 0
+    end
+    
+    begin
+      ANGALIA.stop_livestream(0) # Signal AngaliaWork to stop the stream unconditionally
+      flash[:notice] = "Livestream has been forced OFF."
+    rescue AngaliaError::WebcamOperationError => e
+      flash[:error] = "Error forcing livestream off: #{e.message}"
+      Environ.log_error("App: Error in /weboff: #{e.message}")
+    rescue => e
+      flash[:error] = "An unexpected error occurred forcing livestream off: #{e.message}"
+      Environ.log_error("App: Unexpected error in /weboff: #{e.message}")
+    end
+
+    redirect '/'
+  end # get /weboff
 
 
   # ------------------------------------------------------------
