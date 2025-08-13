@@ -1,6 +1,23 @@
 %i.center &diams;&ensp;live webcam feed&ensp;&diams;
 .webcam-container
-  %img#webcam-stream{src: "/images/lily-of-the-valley.png", alt: "Angalia Live Webcam Feed"}
+  - if @is_livestream
+    %img#webcam-stream{src: "/webcam_stream", alt: "Angalia livestream is on"}
+    :javascript
+      // Basic client-side JavaScript to handle potential image loading errors
+      document.addEventListener('DOMContentLoaded', function() {
+        const webcamImage = document.getElementById('webcam-stream');
+        webcamImage.onerror = function() {
+          console.error("Failed to load webcam stream. Retrying in 5 seconds...");
+          // Display a placeholder image or message indicating stream is loading or unavailable
+          webcamImage.src = "/images/in-progress-meeting.png"; // Updated placeholder image
+          setTimeout(() => {
+            // Reload the stream source to attempt reconnection
+            webcamImage.src = "/webcam_stream";
+          }, 5000);
+        };
+      });
+  - else
+    %img#webcam-stream{src: "/images/lily-of-the-valley.png", alt: "Angalia livestream is off"}
 
 %h5 Welcome to Angalia&trade;
 %p Allowing authorized caregivers to video-meet with a patient.

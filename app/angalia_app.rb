@@ -49,6 +49,11 @@ class AngaliaApp < Sinatra::Application
   # Displays the main caregiver control panel with action buttons.
   # ------------------------------------------------------------
   get '/' do
+    # MUTEX BLOCK =======================================================
+    @@livestream_mutex.synchronize do
+      @is_livestream = (@@livestream_client_count > 0 && !@@is_jitsimeeting)
+    end
+    # MUTEX BLOCK =======================================================
     haml :index
   end # get /
 
