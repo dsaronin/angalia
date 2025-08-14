@@ -121,6 +121,12 @@ class AngaliaApp < Sinatra::Application
             out << "\r\n"
           else
             # If no frame is available, wait briefly to prevent busy-waiting.
+            # However, if the stream is truly off (e.g., /weboff was hit),
+            # we should break the loop.
+            if !ANGALIA.is_livestreaming?
+              Environ.log_info("App: Livestream reported off by AngaliaWork, terminating stream loop.")
+              break # Break out of the loop if stream is no longer active
+            end
             sleep 0.1    # The sleep duration can be tuned.
           end  # fi .. if
 
@@ -129,13 +135,16 @@ class AngaliaApp < Sinatra::Application
         # RESCUE BLOCK =======================================================
       rescue IOError, Errno::EPIPE => e
         # Handle client disconnection or pipe errors gracefully.
-        Environ.log_warn "Webcam stream client disconnected / pipe error: #{e.message}"
+        Environ.log_warn "App: Livestream pipe error: #{e.message}"
+        break # Break the loop on client disconnect
       rescue LivestreamForceStopError => e
         # This is the expected exception when /weboff forces the stream to stop
-        Environ.log_info "App: Livestream forced to stop: #{e.message}"
+        Environ.log_warn "App: Livestream forcibly terminated: #{e.message}"
+        break # Explicitly break the loop upon forced termination
       rescue => e
         # Catch any other unexpected errors during streaming.
-        Environ.log_error "Error streaming webcam: #{e.message}"
+        Environ.log_error "App: Livestream unexpected error: #{e.message}"
+        break # Break the loop on unexpected errors
 
       ensure
         # MUTEX BLOCK =======================================================
@@ -182,9 +191,9 @@ class AngaliaApp < Sinatra::Application
        begin # Added begin block
          if @@active_livestream_thread && @@active_livestream_thread.alive?
            Environ.log_warn("App: Signalling active livestream thread to terminate due to Meet start.")
-           @@active_livestream_thread.raise(Angalia::LivestreamForceStopError, "Meet session started.")
+           @@active_livestream_thread.raise(LivestreamForceStopError, "Meet session started.")
          end
-       rescue Angalia::LivestreamForceStopError => e
+       rescue LivestreamForceStopError => e
          Environ.log_info("App: Successfully signalled livestream thread to stop for Meet (expected).")
        rescue => e
          Environ.log_error("App: Unexpected error when signalling livestream thread to stop for Meet: #{e.message}")
@@ -286,9 +295,9 @@ class AngaliaApp < Sinatra::Application
       begin # Added begin block
         if @@active_livestream_thread && @@active_livestream_thread.alive?
           Environ.log_warn("App: Terminate-Signal livestream thread /weboff")
-          @@active_livestream_thread.raise(Angalia::LivestreamForceStopError, "Forced stop via /weboff")
+          @@active_livestream_thread.raise(LivestreamForceStopError, "Forced stop via /weboff")
         end  # force stop to livestream listener
-      rescue Angalia::LivestreamForceStopError => e
+      rescue LivestreamForceStopError => e
         Environ.log_info("App: Successfully signalled livestream thread to stop (expected).")
       rescue => e
         Environ.log_error("App: Unexpected error when signalling livestream thread to stop: #{e.message}")
