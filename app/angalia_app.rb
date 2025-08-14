@@ -67,6 +67,52 @@ class AngaliaApp < Sinatra::Application
   end
 
   # ------------------------------------------------------------
+  # GET /start_livestream   -- intermediate Sinatra route that 
+  # handles starting the livestream on the backend 
+  # then redirects the user back to the home page (/). 
+  # The home page (index.haml) will then, as designed, use its 
+  # @is_livestream flag to conditionally display the embedded stream.
+  # note:
+  # We assume webcam_stream handles its own idempotency and client count.
+  # Our primary job here is to flip the state so /index displays the stream.
+  # For now, simply ensuring no Jitsi meeting and then redirecting.
+  # ------------------------------------------------------------
+  get '/start_livestream' do
+
+    # MUTEX BLOCK =======================================================
+    @@livestream_mutex.synchronize do
+      if @@is_jitsimeeting
+        flash[:notice] = "Cannot start livestream: Video meeting is active."
+        redirect '/'
+      elsif @@livestream_client_count >= 1
+        flash[:notice] = "Livestream already active for another user."
+        redirect '/'
+      else
+        # Allow the /webcam_stream route's logic to increment count and set thread.
+        # We just need to ensure AngaliaWork is starting the stream.
+          # RESCUE BLOCK =======================================================
+        begin
+          ANGALIA.start_livestream(1) # Pass 1 to indicate at least one viewer is expected
+          flash[:notice] = "Livestream is starting."
+        rescue WebcamOperationError => e
+          flash[:error] = "Failed to start livestream: #{e.message}"
+          Environ.log_error("App: Error starting livestream via /start_livestream_view: #{e.message}")
+        rescue => e
+          flash[:error] = "An unexpected error occurred while starting livestream: #{e.message}"
+          Environ.log_error("App: Unexpected error starting livestream via /start_livestream: #{e.message}")
+        end  # rescue block
+          # END RESCUE BLOCK =======================================================
+
+        redirect '/'   # <-- returns us to /index page to show livestream
+
+      end  # fi .. if error checking
+    end  # mutex
+    # MUTEX BLOCK =======================================================
+
+  end  # get do block
+  # ------------------------------------------------------------
+
+  # ------------------------------------------------------------
   # GET /webcam_stream
   # View Webcam Stream
   # Serves a continuous MJPEG stream from the Angalia webcam.
@@ -124,7 +170,7 @@ class AngaliaApp < Sinatra::Application
             # However, if the stream is truly off (e.g., /weboff was hit),
             # we should break the loop.
             if !ANGALIA.is_livestreaming?
-              Environ.log_info("App: Livestream reported off by AngaliaWork, terminating stream loop.")
+              Environ.log_warn("App: Livestream reported off by AngaliaWork, terminating stream loop.")
               break # Break out of the loop if stream is no longer active
             end
             sleep 0.1    # The sleep duration can be tuned.
