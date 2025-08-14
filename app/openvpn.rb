@@ -4,7 +4,7 @@
 
 require 'singleton'
 require_relative 'environ' # Required for Environ.log_info, Environ::OPENVPN_CLIENT_CONFIG_PATH, Environ::VPN_RETRY_COUNT
-require_relative 'angalia_error' # Required for AngaliaError::OpenVPNError
+require_relative 'angalia_error' # Required for OpenVPNError
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++
 module Angalia              # Define the top-level module  
@@ -29,12 +29,12 @@ class OpenVPN
   #   connect -- true if verify_configuration should also connect the tunnel
   # This is the primary entry point for OpenVPN setup.
   # Attempts to start the OpenVPN client systemd service.
-  # Raises AngaliaError::OpenVPNError if the connection cannot be established or verified.
+  # Raises OpenVPNError if the connection cannot be established or verified.
   # ------------------------------------------------------------
   def verify_configuration( connect )
     begin
       unless system("systemctl is-active NetworkManager.service > /dev/null 2>&1")
-        raise AngaliaError::OpenVPNError.new("NetworkManager.service is not active. nmcli commands will not work.")
+        raise OpenVPNError.new("NetworkManager.service is not active. nmcli commands will not work.")
       end
       Environ.log_info("OpenVPN: Verified NetworkManager.service running.")
 
@@ -44,17 +44,17 @@ class OpenVPN
           Environ.log_info("OpenVPN: Angalia vpn tunnel connected.")
         else  # FAILURE IS HERE
           Environ.log_error("OpenVPN: Angalia vpn tunnel does NOT connect.")
-          raise AngaliaError::OpenVPNError.new("Angalia vpn tunnel does NOT connect.")
+          raise OpenVPNError.new("Angalia vpn tunnel does NOT connect.")
         end
       end   #  unless connection try
 
       # rescue block =========================================================
-    rescue AngaliaError::OpenVPNError => e
+    rescue OpenVPNError => e
       raise
     rescue => e
       msg = "OpenVPN: Unexpected error during service start: #{e.message}"
       Environ.log_error(msg)
-      raise AngaliaError::OpenVPNError.new(msg)
+      raise OpenVPNError.new(msg)
     end
       # end rescue block ======================================================
   end # verify_configuration
@@ -62,8 +62,8 @@ class OpenVPN
   # ------------------------------------------------------------
   #  start_vpn -- verifies services, connects tunnel
   #  this will be the entry point each time that a MEETING is started
-  # Raises AngaliaError::OpenVPNError if the connection cannot be established or verified.
-  # Raises AngaliaError::OpenVPNError if tunnel fails
+  # Raises OpenVPNError if the connection cannot be established or verified.
+  # Raises OpenVPNError if tunnel fails
   # ------------------------------------------------------------
   def start_vpn
     verify_configuration( true )  

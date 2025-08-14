@@ -6,7 +6,7 @@
 # -----------------------------------------------------
 require 'singleton'
 require_relative 'environ' # Required for Environ.log_info
-require_relative 'angalia_error' # Required for AngaliaError::MeetViewError
+require_relative 'angalia_error' # Required for MeetViewError
 require 'timeout' # Required for Timeout.timeout in stop_session
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -22,7 +22,7 @@ class MeetView
   end
 
   # verify_configuration -- Checks for flatpak and org.chromium.Chromium Flatpak installation.
-  # Raises AngaliaError::MeetViewError if flatpak or the Chromium Flatpak is not found.
+  # Raises MeetViewError if flatpak or the Chromium Flatpak is not found.
   # ------------------------------------------------------------
   def verify_configuration
     Environ.log_info("MeetView: Verifying configuration (Flatpak Chromium).")
@@ -30,7 +30,7 @@ class MeetView
       # Check if flatpak executable exists in PATH
       flatpak_path = `which flatpak`.strip
       if flatpak_path.empty?
-        raise AngaliaError::MeetViewError.new("flatpak executable not found in PATH. Flatpak Chromium cannot be launched.")
+        raise MeetViewError.new("flatpak executable not found in PATH. Flatpak Chromium cannot be launched.")
       end
       Environ.log_info("MeetView: flatpak found at: #{flatpak_path}.")
 
@@ -39,7 +39,7 @@ class MeetView
       # We redirect output to /dev/null to keep console clean.
       flatpak_chromium_installed = system("flatpak info org.chromium.Chromium > /dev/null 2>&1")
       unless flatpak_chromium_installed
-        raise AngaliaError::MeetViewError.new("org.chromium.Chromium Flatpak not installed. Please install it.")
+        raise MeetViewError.new("org.chromium.Chromium Flatpak not installed. Please install it.")
       end
       Environ.log_info("MeetView: org.chromium.Chromium Flatpak installation verified.")
 
@@ -48,12 +48,12 @@ class MeetView
       mic_setup
 
       Environ.log_info("MeetView: Configuration verified successfully.")
-    rescue AngaliaError::MeetViewError => e
+    rescue MeetViewError => e
       Environ.log_fatal("MeetView: Configuration error: #{e.message}")
       raise # Re-raise for AngaliaWork to handle as a MajorError
     rescue => e
       Environ.log_fatal("MeetView: Unexpected error during configuration verification: #{e.message}")
-      raise AngaliaError::MeetViewError.new("Unexpected error during configuration verification: #{e.message}") # Wrap unexpected errors
+      raise MeetViewError.new("Unexpected error during configuration verification: #{e.message}") # Wrap unexpected errors
     end
   end # verify_configuration
 
@@ -93,7 +93,7 @@ class MeetView
   #   true:  if session started successfully
   #   false: if session failed to start
   # Raises:
-  #   AngaliaError::MeetViewError: If Chromium fails to launch.
+  #   MeetViewError: If Chromium fails to launch.
   # ------------------------------------------------------------
   def start_session(jitsi_room_url)
     Environ.log_info("MeetView: Starting Jitsi session at #{jitsi_room_url}")
@@ -130,14 +130,14 @@ class MeetView
       sleep 0.1 # Give Chromium a moment to start
 
       unless Process.kill(0, @chromium_pid) # Check if process is still alive (signal 0 does not kill)
-        raise AngaliaError::MeetViewError.new("Flatpak Chromium process failed to launch for Jitsi session.")
+        raise MeetViewError.new("Flatpak Chromium process failed to launch for Jitsi session.")
       end
 
       @is_active = true
       Environ.log_info("MeetView: Jitsi session started. Chromium PID: #{@chromium_pid}")
       return true
   
-    rescue AngaliaError::MeetViewError => e
+    rescue MeetViewError => e
       Environ.log_error("MeetView: Error starting session: #{e.message}")
       @is_active = false
       @chromium_pid = nil
@@ -146,7 +146,7 @@ class MeetView
       Environ.log_error("MeetView: Unexpected error during session start: #{e.message}")
       @is_active = false
       @chromium_pid = nil
-      raise AngaliaError::MeetViewError.new("Unexpected error during session start: #{e.message}") # Wrap unexpected errors
+      raise MeetViewError.new("Unexpected error during session start: #{e.message}") # Wrap unexpected errors
     end
   
   end # start_session
@@ -157,7 +157,7 @@ class MeetView
   #   true:  if session stopped successfully
   #   false: if session failed to stop
   # Raises:
-  #   AngaliaError::MeetViewError: If Chromium process cannot be killed.
+  #   MeetViewError: If Chromium process cannot be killed.
   # ------------------------------------------------------------
   def stop_session
     Environ.log_info("MeetView: Stopping Jitsi session.")
@@ -199,11 +199,11 @@ class MeetView
         return true
       rescue => e
         Environ.log_error("MeetView: Unexpected error during force-kill of Chromium (PID: #{@chromium_pid}): #{e.message}")
-        raise AngaliaError::MeetViewError.new("Unexpected error during force-kill of Chromium: #{e.message}")
+        raise MeetViewError.new("Unexpected error during force-kill of Chromium: #{e.message}")
       end
     rescue => e
       Environ.log_error("MeetView: Unexpected error during session stop: #{e.message}")
-      raise AngaliaError::MeetViewError.new("Unexpected error during session stop: #{e.message}") # Wrap unexpected errors
+      raise MeetViewError.new("Unexpected error during session stop: #{e.message}") # Wrap unexpected errors
     end
   
   end # stop_session

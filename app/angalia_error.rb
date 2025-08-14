@@ -1,11 +1,18 @@
-# --- angalia_error.rb ---
+# --------------------------------------------------------
 # Angalia: Custom Exception Definitions
 # Copyright (c) 2025 David S Anderson, All Rights Reserved
 
 # Base class for all Angalia-specific exceptions.
 # Inherits from StandardError to ensure it's caught by general rescue blocks.
+# --------------------------------------------------------
+# --- angalia_error.rb ---
+# --------------------------------------------------------
 
-class AngaliaError < StandardError
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+module Angalia # Angalia Namespace
+# +++++++++++++++++++++++++++++++++++++++++++++++++
+
+  class AngaliaError < StandardError; end
 
   # MajorError for critical, unrecoverable configuration issues.
   class MajorError < AngaliaError
@@ -35,7 +42,6 @@ class AngaliaError < StandardError
     end
   end
 
-
   # Specific error for when webcam configuration or streaming fails.
   class WebcamError < MajorError
     def initialize(msg = "Webcam config/control failed.")
@@ -49,7 +55,6 @@ class AngaliaError < StandardError
       super(msg)
     end
   end
-
 
   # Specific error for when the Jitsi Meet view (browser) fails to launch or operate.
   class MeetViewError < MajorError
@@ -66,23 +71,11 @@ class AngaliaError < StandardError
   end
 
   # Custom error for explicitly stopping a livestream thread
-  class LivestreamForceStopError < StandardError; end
+  class LivestreamForceStopError < MajorError
+    def initialize(msg = "Livestream service thread disconnected.")
+      super(msg)
+    end
+  end
 
-  # More granular operational errors can be defined here, inheriting from MinorError
-  # For example:
-  # class OperationError < MinorError
-  #   class StreamFailed < OperationError
-  #     def initialize(msg = "Webcam stream failed during operation.")
-  #       super(msg)
-  #     end
-  #   end
-  #   class DisplayControlFailed < OperationError
-  #     def initialize(msg = "Display control failed during operation.")
-  #       super(msg)
-  #     end
-  #   end
-  # end
-
-
-end   # class AngaliaError
+end # module Angalia
 

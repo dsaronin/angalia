@@ -83,7 +83,7 @@ class Webcam
   # ------------------------------------------------------------
   # verify_configuration -- Checks for critical webcam setup issues.
   # Ensures webcam device is present and accessible.
-  # Raises AngaliaError::WebcamError if configuration is incorrect.
+  # Raises WebcamError if configuration is incorrect.
   # ------------------------------------------------------------
   def verify_configuration
     begin
@@ -93,13 +93,13 @@ class Webcam
       unless status.success?
         msg = "Webcam: v4l2-ctl query failed: #{stderr}"
         Environ.log_error(msg)
-        raise AngaliaError::WebcamError.new(msg)
+        raise WebcamError.new(msg)
       end
 
       unless stdout.include?(Environ::MY_WEBCAM_NAME)
         msg = "Webcam: expected '/dev/#{Environ::MY_WEBCAM_NAME}' not found in v4l2-ctl output."
         Environ.log_error(msg)
-        raise AngaliaError::WebcamError.new(msg)
+        raise WebcamError.new(msg)
       end
 
       Environ.log_info("Webcam: Found '/dev/#{Environ::MY_WEBCAM_NAME}'.")
@@ -108,8 +108,8 @@ class Webcam
     rescue Errno::ENOENT => e
       msg = "Webcam: 'v4l2-ctl' command not found. Error: #{e.message}"
       Environ.log_fatal(msg)
-      raise AngaliaError::WebcamError.new(msg)
-    rescue AngaliaError::WebcamError => e
+      raise WebcamError.new(msg)
+    rescue WebcamError => e
       # Catches specific configuration errors and re-raises them after logging
       Environ.log_fatal("Webcam: Configuration error: #{e.message}")
       raise # Re-raise for AngaliaWork to handle as a MajorError
@@ -117,7 +117,7 @@ class Webcam
       # Catches any unexpected errors during configuration verification
       msg ="Webcam: Unexpected error verify_configuration: #{e.message}"
       Environ.log_fatal(msg)
-      raise AngaliaError::WebcamError.new(msg)
+      raise WebcamError.new(msg)
     end  # rescue block
       # END RESCUE BLOCK ====================================================
 
@@ -133,7 +133,7 @@ class Webcam
   # This method is idempotent; does nothing if streaming already active.
   # Args:
   #   current_client_count (Integer): The number of active clients requesting the stream.
-  # Raises AngaliaError::WebcamOperationError on failure.
+  # Raises WebcamOperationError on failure.
   # ------------------------------------------------------------
   def start_livestream(current_client_count)
       return true if streaming?
@@ -148,7 +148,7 @@ class Webcam
       return true
  
      # RESCUE BLOCK =======================================================
-     rescue AngaliaError::WebcamOperationError => e
+     rescue WebcamOperationError => e
       Environ.log_error("Webcam: Failed livestream initiation: #{e.message}")
       clear_state # Ensure a clean state on failure
       raise # Re-raise for AngaliaWork to handle
@@ -156,7 +156,7 @@ class Webcam
       msg = "Webcam: Unexpected error during initiation: #{e.message}"
       Environ.log_error(msg)
       clear_state
-      raise AngaliaError::WebcamOperationError.new(msg) # Wrap in our specific error
+      raise WebcamOperationError.new(msg) # Wrap in our specific error
     end 
     # END RESCUE BLOCK ====================================================
 
@@ -170,7 +170,7 @@ class Webcam
   # Returns:
   #   true: If the termination sequence was attempted or not needed.
   # Raises:
-  #    AngaliaError::WebcamOperationError on failure.
+  #    WebcamOperationError on failure.
   # ------------------------------------------------------------
   def stop_livestream(current_client_count)
     Environ.log_info("Webcam: terminate livestream (#{current_client_count})...")
@@ -183,7 +183,7 @@ class Webcam
         Environ.log_info("Webcam: ...Livestream terminated.")
 
       # RESCUE BLOCK =======================================================
-      rescue AngaliaError::WebcamOperationError => e
+      rescue WebcamOperationError => e
         Environ.log_error("Webcam: termination failed: #{e.message}")
         clear_state # Attempt to clean up state even if an error occurs
         raise # Re-raise for AngaliaWork to handle
@@ -191,7 +191,7 @@ class Webcam
         msg = "Webcam: Unexpected termination error: #{e.message}"
         Environ.log_error(msg)
         clear_state
-        raise AngaliaError::WebcamOperationError.new(msg) # Wrap in our specific error
+        raise WebcamOperationError.new(msg) # Wrap in our specific error
       end
       # END RESCUE BLOCK ====================================================
     else
@@ -229,7 +229,7 @@ class Webcam
   # ------------------------------------------------------------
   # start_stream -- Initiates low-bandwidth MJPEG stream to named pipe.
   # runs ffmpeg in background, captures PID.
-  # Raises AngaliaError::WebcamOperationError if stream fails to start.
+  # Raises WebcamOperationError if stream fails to start.
   # ------------------------------------------------------------
   def start_stream
     return if streaming?  # if already started, nothing more to do
@@ -245,13 +245,13 @@ class Webcam
       if ffmpeg_pids&.empty?
         msg = "Webcam: Failed to start ffmpeg stream or retrieve PID."
         Environ.log_error(msg)
-        raise AngaliaError::WebcamOperationError.new(msg)
+        raise WebcamOperationError.new(msg)
       end
 
       Environ.log_info("Webcam: Stream started (PID: #{@ffmpeg_pid}).")
 
       # RESCUE BLOCK =======================================================
-    rescue AngaliaError::WebcamOperationError => e
+    rescue WebcamOperationError => e
       Environ.log_error("Webcam: Stream start error: #{e.message}")
       clear_state
       raise # Re-raise for AngaliaWork to catch
@@ -259,7 +259,7 @@ class Webcam
       msg = "Webcam: Unexpected stream start error: #{e.message}"
       Environ.log_error(msg)
       clear_state
-      raise AngaliaError::WebcamOperationError.new(msg)
+      raise WebcamOperationError.new(msg)
     end
       # END RESCUE BLOCK ====================================================
 
@@ -272,7 +272,7 @@ class Webcam
   # stop_stream -- Terminates the running webcam stream.
   # Forcefully kills all ffmpeg processes
   # TODO:   system( KILL_FIFO )   # removes any lingering PIPE?
-  # Raises AngaliaError::WebcamOperationError if termination fails.
+  # Raises WebcamOperationError if termination fails.
   # ------------------------------------------------------------
   def stop_stream
     unless @ffmpeg_pid
@@ -301,7 +301,7 @@ class Webcam
         system( FFMPEG_KILL_ALL )   # forcefully terminate all ffmpeg processes
         msg = "Webcam: brute force termination of all ffmpeg processes"
         Environ.log_error(msg)
-        raise AngaliaError::WebcamOperationError.new(msg)
+        raise WebcamOperationError.new(msg)
       end
 
       Environ.log_info("Webcam: ffmpeg process (PID: #{@ffmpeg_pid}) terminated.")
@@ -310,14 +310,14 @@ class Webcam
     rescue Errno::ESRCH => e
       # Process not found, likely already dead. Log as info.
       Environ.log_info("Webcam: ffmpeg process (PID: #{@ffmpeg_pid}) not found or already terminated: #{e.message}")
-    rescue AngaliaError::WebcamOperationError => e
+    rescue WebcamOperationError => e
       # Re-raise if our internal check determined a failure
       Environ.log_error("Webcam: Stream termination error: #{e.message}")
       raise
     rescue => e
       msg = "Webcam: Unexpected error during stream termination: #{e.message}"
       Environ.log_error(msg)
-      raise AngaliaError::WebcamOperationError.new(msg)
+      raise WebcamOperationError.new(msg)
 
     ensure
       # Always clear state regardless of success or failure
@@ -381,7 +381,7 @@ class Webcam
         chunk = @pipe_io.read_nonblock(4096) # Read up to 4KB non-blocking
 
         if chunk.nil? # EOF; ffmpeg process has stopped writing to the pipe
-          raise AngaliaError::WebcamOperationError.new("Webcam stream pipe closed unexpectedly.")
+          raise WebcamOperationError.new("Webcam stream pipe closed unexpectedly.")
         end
 
         @buffer << chunk
@@ -419,11 +419,11 @@ class Webcam
       nil   # Return nil as no frame is ready yet.
 
     rescue EOFError # Pipe writer closed the pipe during read_nonblock
-      raise AngaliaError::WebcamOperationError.new("Webcam stream pipe writer disconnected during read.")
+      raise WebcamOperationError.new("Webcam stream pipe writer disconnected during read.")
 
     rescue => e
       # Catch any other unexpected errors during read or parsing.
-      raise AngaliaError::WebcamOperationError.new("Error reading or parsing webcam stream: #{e.message}")
+      raise WebcamOperationError.new("Error reading or parsing webcam stream: #{e.message}")
     end  # rescue
       # END RESCUE BLOCK ====================================================
 
@@ -477,7 +477,7 @@ class Webcam
         unless status.success?
           msg = "Webcam: ...Failed pipe mkfifo #{pipe_path}: #{stderr}"
           Environ.log_error(msg)
-          raise AngaliaError::WebcamOperationError.new(msg)
+          raise WebcamOperationError.new(msg)
         end  # failure
       end  # existed
 
@@ -494,15 +494,15 @@ class Webcam
     rescue Errno::ENOENT => e
       msg = "Webcam: pipe not found: #{pipe_path}. Error: #{e.message}"
       Environ.log_fatal(msg)
-      raise AngaliaError::WebcamOperationError.new(msg) # Use WebcamOperationError
+      raise WebcamOperationError.new(msg) # Use WebcamOperationError
     rescue Errno::EACCES => e
       msg = "Webcam: Access permission denied pipe: #{pipe_path}. Error: #{e.message}"
       Environ.log_fatal(msg)
-      raise AngaliaError::WebcamOperationError.new(msg) # Use WebcamOperationError
+      raise WebcamOperationError.new(msg) # Use WebcamOperationError
     rescue => e
       msg = "Webcam: Unexpected error opening stream pipe: #{e.message}"
       Environ.log_fatal(msg)
-      raise AngaliaError::WebcamOperationError.new(msg) # Use WebcamOperationError
+      raise WebcamOperationError.new(msg) # Use WebcamOperationError
     end  # end begin .. rescue block
       # END RESCUE BLOCK ====================================================
 

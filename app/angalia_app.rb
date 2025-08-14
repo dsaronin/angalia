@@ -130,7 +130,7 @@ class AngaliaApp < Sinatra::Application
       rescue IOError, Errno::EPIPE => e
         # Handle client disconnection or pipe errors gracefully.
         Environ.log_warn "Webcam stream client disconnected / pipe error: #{e.message}"
-      rescue Angalia::LivestreamForceStopError => e
+      rescue LivestreamForceStopError => e
         # This is the expected exception when /weboff forces the stream to stop
         Environ.log_info "App: Livestream forced to stop: #{e.message}"
       rescue => e
@@ -176,11 +176,21 @@ class AngaliaApp < Sinatra::Application
      if @@livestream_client_count > 0
        Environ.log_info("App: Resetting livestream client count from #{@@livestream_client_count} to 0 due to Meet session start.")
        @@livestream_client_count = 0
-       # Force stop the active livestream thread if it exists
-       if @@active_livestream_thread && @@active_livestream_thread.alive?
-         Environ.log_warn("App: Signalling active livestream thread to terminate due to Meet start.")
-         @@active_livestream_thread.raise(Angalia::LivestreamForceStopError, "Meet session started.")
-       end
+
+         # RESCUE BLOCK =======================================================
+         # Force stop the active livestream thread if it exists
+       begin # Added begin block
+         if @@active_livestream_thread && @@active_livestream_thread.alive?
+           Environ.log_warn("App: Signalling active livestream thread to terminate due to Meet start.")
+           @@active_livestream_thread.raise(Angalia::LivestreamForceStopError, "Meet session started.")
+         end
+       rescue Angalia::LivestreamForceStopError => e
+         Environ.log_info("App: Successfully signalled livestream thread to stop for Meet (expected).")
+       rescue => e
+         Environ.log_error("App: Unexpected error when signalling livestream thread to stop for Meet: #{e.message}")
+       end # Added end block
+         # END RESCUE BLOCK =======================================================
+
      end  # reset livestream count
      @@is_jitsimeeting = true # Set Jitsi meeting flag to true
    end  # mutex
@@ -270,19 +280,28 @@ class AngaliaApp < Sinatra::Application
     @@livestream_mutex.synchronize do
       Environ.log_warn("App: '/weboff' Forcing livestream off; (#{@@livestream_client_count})")
       @@livestream_client_count = 0
-      #
-      # Force terminate the active livestream thread if it exists
-      if @@active_livestream_thread && @@active_livestream_thread.alive?
-        Environ.log_warn("App: Terminate-Signal livestream thread /weboff")
-        @@active_livestream_thread.raise(Angalia::LivestreamForceStopError, "Forced stop via /weboff")
-      end  # force stop to livestream listener
+
+        # RESCUE BLOCK =======================================================
+        # Force terminate the active livestream thread if it exists
+      begin # Added begin block
+        if @@active_livestream_thread && @@active_livestream_thread.alive?
+          Environ.log_warn("App: Terminate-Signal livestream thread /weboff")
+          @@active_livestream_thread.raise(Angalia::LivestreamForceStopError, "Forced stop via /weboff")
+        end  # force stop to livestream listener
+      rescue Angalia::LivestreamForceStopError => e
+        Environ.log_info("App: Successfully signalled livestream thread to stop (expected).")
+      rescue => e
+        Environ.log_error("App: Unexpected error when signalling livestream thread to stop: #{e.message}")
+      end # Added end block
+        # END RESCUE BLOCK =======================================================
+
     end  # mutex
     # MUTEX BLOCK =======================================================
     
     begin
       ANGALIA.stop_livestream(0) # Signal AngaliaWork to stop the stream unconditionally
       flash[:notice] = "Livestream has been forced OFF."
-    rescue AngaliaError::WebcamOperationError => e
+    rescue WebcamOperationError => e
       flash[:error] = "Error forcing livestream off: #{e.message}"
       Environ.log_error("App: Error in /weboff: #{e.message}")
     rescue => e

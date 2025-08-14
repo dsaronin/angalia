@@ -6,7 +6,7 @@
 
 require 'singleton'
 require_relative 'environ' # Required for Environ.log_info, Environ.my_monitor_default
-require_relative 'angalia_error' # Required for AngaliaError::MonitorError, AngaliaError::MonitorOperationError
+require_relative 'angalia_error' # Required for MonitorError, MonitorOperationError
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++
 module Angalia              # Define the top-level module  
@@ -32,7 +32,7 @@ class Monitor
     begin
       connected_monitors = get_my_monitor() # This now returns an array
 
-    rescue AngaliaError::MonitorError => e
+    rescue MonitorError => e
       Environ.log_warn("Monitor: Dynamic discovery of monitors failed: #{e.message}. Will attempt to use default or fallback logic.")
       # connected_monitors remains empty, which will lead to using the default
     rescue => e
@@ -65,7 +65,7 @@ class Monitor
 
   # ------------------------------------------------------------
   # verify_configuration -- Checks for critical monitor setup issues.
-  # Raises AngaliaError::MonitorError if configuration is incorrect.
+  # Raises MonitorError if configuration is incorrect.
   # ------------------------------------------------------------
   def verify_configuration
     Environ.log_info("Monitor: Verifying configuration.")
@@ -75,15 +75,15 @@ class Monitor
       if @display_name.nil? || @display_name.empty?
         # This case should ideally be caught by set_display_name_with_fallback's fallback,
         # but as a final safeguard.
-        raise AngaliaError::MonitorError.new("Monitor display name could not be determined even with fallback.")
+        raise MonitorError.new("Monitor display name could not be determined even with fallback.")
       end
       Environ.log_info("Monitor: Configuration verified successfully for display: #{@display_name}.")
-    rescue AngaliaError::MonitorError => e # Catch specific monitor configuration errors
+    rescue MonitorError => e # Catch specific monitor configuration errors
       Environ.log_fatal("Monitor: Configuration error: #{e.message}")
       raise # Re-raise for AngaliaWork to handle as a MajorError
     rescue => e # Catch any other unexpected errors during configuration
       Environ.log_fatal("Monitor: Unexpected error during configuration verification: #{e.message}")
-      raise AngaliaError::MonitorError.new("Unexpected error during configuration verification: #{e.message}") # Wrap unexpected errors
+      raise MonitorError.new("Unexpected error during configuration verification: #{e.message}") # Wrap unexpected errors
     end
   end # verify_configuration
 
@@ -92,7 +92,7 @@ class Monitor
 # Returns:
 #   Array<String>: An array of connected monitor names (e.g., ["HDMI-A-0", "DP-1"]).
 # Raises:
-#   AngaliaError::MonitorError: If xrandr command fails or finds no connected monitors.
+#   MonitorError: If xrandr command fails or finds no connected monitors.
 # ------------------------------------------------------------
   def get_my_monitor()
     Environ.log_info("Monitor: Attempting to discover all connected monitor display names via xrandr.")
@@ -103,7 +103,7 @@ class Monitor
 
       if output.empty?
         Environ.log_warn("Monitor: xrandr found no connected monitors.")
-        raise AngaliaError::MonitorError.new("No connected monitors found via xrandr.")
+        raise MonitorError.new("No connected monitors found via xrandr.")
       else
         # Split the output by newline to get an array of monitor names
         monitor_names = output.split("\n").map(&:strip).reject(&:empty?)
@@ -113,7 +113,7 @@ class Monitor
 
     rescue => e # Catch any error from system command execution
       Environ.log_error("Monitor: Error executing xrandr command: #{e.message}")
-      raise AngaliaError::MonitorError.new("Error executing xrandr command for monitor discovery: #{e.message}") # Wrap and re-raise
+      raise MonitorError.new("Error executing xrandr command for monitor discovery: #{e.message}") # Wrap and re-raise
     end
 
   end # get_my_monitor
@@ -125,18 +125,18 @@ class Monitor
       success = system("xrandr --output #{@display_name} --auto")
 
       unless success
-        raise AngaliaError::MonitorOperationError.new("Failed to turn on monitor.")
+        raise MonitorOperationError.new("Failed to turn on monitor.")
       end
       @is_on = true
       Environ.log_info("Monitor: Display turned on.")
-    rescue AngaliaError::MonitorOperationError => e
+    rescue MonitorOperationError => e
       Environ.log_error("Monitor: Operation error turning on display: #{e.message}")
       @is_on = false # Ensure state is consistent with failure
       raise # Re-raise the specific error
     rescue => e
       Environ.log_error("Monitor: Unexpected error during display turn on: #{e.message}")
       @is_on = false
-      raise AngaliaError::MonitorOperationError.new("Unexpected error during display turn on: #{e.message}") # Wrap unexpected errors
+      raise MonitorOperationError.new("Unexpected error during display turn on: #{e.message}") # Wrap unexpected errors
     end
   end # turn_on
 
@@ -151,15 +151,15 @@ class Monitor
       end  # if debugging
 
       unless success
-        raise AngaliaError::MonitorOperationError.new("Failed to turn off monitor.")
+        raise MonitorOperationError.new("Failed to turn off monitor.")
       end
-    rescue AngaliaError::MonitorOperationError => e
+    rescue MonitorOperationError => e
       Environ.log_error("Monitor: Operation error turning off display: #{e.message}")
       # No need to change @is_on here, as it's already set to false
       raise # Re-raise the specific error
     rescue => e
       Environ.log_error("Monitor: Unexpected error during display turn off: #{e.message}")
-      raise AngaliaError::MonitorOperationError.new("Unexpected error during display turn off: #{e.message}") # Wrap unexpected errors
+      raise MonitorOperationError.new("Unexpected error during display turn off: #{e.message}") # Wrap unexpected errors
     end
   end # turn_off
 
