@@ -144,14 +144,12 @@ class AngaliaApp < Sinatra::Application
         redirect '/'
      end
 
-      if @@livestream_client_count >= 1
-        Environ.log_info("App: Denying livestream request; stream already active for another client.")
-        flash[:notice] = "Livestream already active for another client."
-        redirect '/'
+      # if index page re-requests (thru refresh) just keep on streaming; no error
+      if @@livestream_client_count < 1  # if first time
+        @@livestream_client_count += 1
+        Environ.log_info("App: Livestream client connected. Count: #{@@livestream_client_count}")
+        @@active_livestream_thread = Thread.current  # current thread servicing livestream
       end
-      @@livestream_client_count += 1
-      Environ.log_info("App: Livestream client connected. Count: #{@@livestream_client_count}")
-      @@active_livestream_thread = Thread.current  # current thread servicing livestream
     end  # mutex lock
     # MUTEX BLOCK =======================================================
 
@@ -200,8 +198,13 @@ class AngaliaApp < Sinatra::Application
         break # Break the loop on unexpected errors
 
       ensure
+
+        # FINAL CLEANUP BLOCK =================================================
+        # This block ensures that the livestream client count is decremented
+        # and the underlying webcam stream is stopped when the stream ends (either
+        # gracefully, by error, or by forced termination).
+
         # MUTEX BLOCK =======================================================
-        # IMPORTANT: Ensure the counter is decremented and webcam is stopped on stream end/error
         @@livestream_mutex.synchronize do
           if @@livestream_client_count > 0
             @@livestream_client_count -= 1
