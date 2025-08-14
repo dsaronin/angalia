@@ -15,9 +15,10 @@ require 'sinatra/form_helpers' # Useful forms on the home or status page
 require 'rack-flash' # displaying success/error messages to the user
 require 'yaml'       # FUTURE: use by Environ for configuration loading
 require 'thread'     # Mutex
+require_relative 'angalia_error' # Required for AngaliaError, LivestreamForceStopError
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++
-module Angalia # Define the top-level module
+module Angalia # Angalia Namespace
 # +++++++++++++++++++++++++++++++++++++++++++++++++
 
 class AngaliaApp < Sinatra::Application
@@ -33,10 +34,10 @@ class AngaliaApp < Sinatra::Application
  # set :show_exceptions, false # used for testing
 
   # MUTEX SYNCED VALUES =======================================================
-  # Initialize the global client counter and its mutex
-  @@livestream_client_count = 0
+  @@livestream_client_count = 0  # global livestream user counter
   @@is_jitsimeeting = false # Initialize the Jitsi meeting flag
-  @@livestream_mutex = Mutex.new
+  @@active_livestream_thread = nil  # Tracks livestream service thread
+  @@livestream_mutex = Mutex.new    # syncs flag access/updates
   # =============================================================================
 
   # ------------------------------------------------------------
@@ -97,6 +98,7 @@ class AngaliaApp < Sinatra::Application
       end
       @@livestream_client_count += 1
       Environ.log_info("App: Livestream client connected. Count: #{@@livestream_client_count}")
+      @@active_livestream_thread = Thread.current  # current thread servicing livestream
     end  # mutex lock
     # MUTEX BLOCK =======================================================
 
@@ -128,6 +130,9 @@ class AngaliaApp < Sinatra::Application
       rescue IOError, Errno::EPIPE => e
         # Handle client disconnection or pipe errors gracefully.
         Environ.log_warn "Webcam stream client disconnected / pipe error: #{e.message}"
+      rescue Angalia::LivestreamForceStopError => e
+        # This is the expected exception when /weboff forces the stream to stop
+        Environ.log_info "App: Livestream forced to stop: #{e.message}"
       rescue => e
         # Catch any other unexpected errors during streaming.
         Environ.log_error "Error streaming webcam: #{e.message}"
@@ -138,12 +143,14 @@ class AngaliaApp < Sinatra::Application
         @@livestream_mutex.synchronize do
           if @@livestream_client_count > 0
             @@livestream_client_count -= 1
-            Environ.log_info("App: Livestream client disconnected. Remaining count: #{@@livestream_client_count}")
+            Environ.log_info("App: Livestream disconnected; #{@@livestream_client_count} users remaining")
             # Tell AngaliaWork/Webcam to stop the stream if no clients remain
             ANGALIA.stop_livestream(@@livestream_client_count)
           else
-            Environ.log_warn("App: Disconnect called when client count was already 0 or less.")
+            Environ.log_warn("App: Disconnect livestream but users already 0")
           end  # fi .. else.. if
+          # Clear the active livestream thread reference
+          @@active_livestream_thread = nil
         end  # mutex block
           # MUTEX BLOCK =======================================================
 
@@ -169,6 +176,11 @@ class AngaliaApp < Sinatra::Application
      if @@livestream_client_count > 0
        Environ.log_info("App: Resetting livestream client count from #{@@livestream_client_count} to 0 due to Meet session start.")
        @@livestream_client_count = 0
+       # Force stop the active livestream thread if it exists
+       if @@active_livestream_thread && @@active_livestream_thread.alive?
+         Environ.log_warn("App: Signalling active livestream thread to terminate due to Meet start.")
+         @@active_livestream_thread.raise(Angalia::LivestreamForceStopError, "Meet session started.")
+       end
      end  # reset livestream count
      @@is_jitsimeeting = true # Set Jitsi meeting flag to true
    end  # mutex
@@ -254,10 +266,18 @@ class AngaliaApp < Sinatra::Application
   # This provides a manual override to stop the stream.
   # ------------------------------------------------------------
   get '/weboff' do
+    # MUTEX BLOCK =======================================================
     @@livestream_mutex.synchronize do
       Environ.log_warn("App: '/weboff' Forcing livestream off; (#{@@livestream_client_count})")
       @@livestream_client_count = 0
-    end
+      #
+      # Force terminate the active livestream thread if it exists
+      if @@active_livestream_thread && @@active_livestream_thread.alive?
+        Environ.log_warn("App: Terminate-Signal livestream thread /weboff")
+        @@active_livestream_thread.raise(Angalia::LivestreamForceStopError, "Forced stop via /weboff")
+      end  # force stop to livestream listener
+    end  # mutex
+    # MUTEX BLOCK =======================================================
     
     begin
       ANGALIA.stop_livestream(0) # Signal AngaliaWork to stop the stream unconditionally

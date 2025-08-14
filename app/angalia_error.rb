@@ -65,6 +65,9 @@ class AngaliaError < StandardError
     end
   end
 
+  # Custom error for explicitly stopping a livestream thread
+  class LivestreamForceStopError < StandardError; end
+
   # More granular operational errors can be defined here, inheriting from MinorError
   # For example:
   # class OperationError < MinorError

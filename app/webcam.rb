@@ -139,21 +139,21 @@ class Webcam
       return true if streaming?
 
     begin
-      Environ.log_info("Webcam: Initiating livestream sequence...")
+      Environ.log_info("Webcam: Initiating livestream...")
 
       start_pipe_reading # Ensures named pipe ready for reading/writing
       start_stream # Start ffmpeg process writing to the pipe
 
-      Environ.log_info("Webcam: ...Livestream sequence initiated")
+      Environ.log_info("Webcam: ...Livestream initiated")
       return true
  
      # RESCUE BLOCK =======================================================
      rescue AngaliaError::WebcamOperationError => e
-      Environ.log_error("Webcam: Failed Initiating livestream sequence: #{e.message}")
+      Environ.log_error("Webcam: Failed livestream initiation: #{e.message}")
       clear_state # Ensure a clean state on failure
       raise # Re-raise for AngaliaWork to handle
     rescue => e
-      msg = "Webcam: Unexpected error during livestream initiation: #{e.message}"
+      msg = "Webcam: Unexpected error during initiation: #{e.message}"
       Environ.log_error(msg)
       clear_state
       raise AngaliaError::WebcamOperationError.new(msg) # Wrap in our specific error
@@ -173,29 +173,29 @@ class Webcam
   #    AngaliaError::WebcamOperationError on failure.
   # ------------------------------------------------------------
   def stop_livestream(current_client_count)
+    Environ.log_info("Webcam: terminate livestream (#{current_client_count})...")
     # Only stop the actual stream if no clients are active.
     # && streaming is still active (don't try to stop an already stopped process)
     if current_client_count < 1 && streaming?
-      Environ.log_info("Webcam: terminating livestream (#{current_client_count} clients)...")
       begin
         stop_stream        # Stop the ffmpeg process
         stop_pipe_reading  # Close the named pipe
-        Environ.log_info("Webcam: ...Livestream sequence terminated.")
+        Environ.log_info("Webcam: ...Livestream terminated.")
 
       # RESCUE BLOCK =======================================================
       rescue AngaliaError::WebcamOperationError => e
-        Environ.log_error("Webcam: Failed terminating livestream sequence: #{e.message}")
+        Environ.log_error("Webcam: termination failed: #{e.message}")
         clear_state # Attempt to clean up state even if an error occurs
         raise # Re-raise for AngaliaWork to handle
       rescue => e
-        msg = "Webcam: Unexpected error during livestream termination: #{e.message}"
+        msg = "Webcam: Unexpected termination error: #{e.message}"
         Environ.log_error(msg)
         clear_state
         raise AngaliaError::WebcamOperationError.new(msg) # Wrap in our specific error
       end
       # END RESCUE BLOCK ====================================================
     else
-      Environ.log_info("Webcam: Stream remains active (client count: #{current_client_count}).")
+      Environ.log_info("Webcam: ...Livestream was not active")
     end  # fi .. client_count >= 1
     return true
   end # stop_livestream
@@ -458,42 +458,49 @@ class Webcam
   #   WebcamOperationError
   # ------------------------------------------------------------
   def start_pipe_reading(pipe_path = get_pipe_path)
+    Environ.log_info "Webcam: start pipe -- #{pipe_path}..."
     # simply return if pipe already open
     if @pipe_io && !@pipe_io.closed?
-      Environ.log_info "Webcam: Stream pipe already open."
+      Environ.log_warn "Webcam: ...pipe already open."
       return @pipe_io # Return the existing pipe IO object
     end
 
     begin
       # Create named pipe if it doesn't exist
       unless File.exist?(pipe_path)
-        Environ.log_info "Webcam: Creating named pipe at #{pipe_path}"
+        Environ.log_info "Webcam: Creating pipe..."
         # Ensure correct permissions: rw for owner, r for group/others
         stdout, stderr, status = Open3.capture3("mkfifo #{pipe_path}")
+        if Environ::DEBUG_MODE
+          Environ.log_warn ["Webcam: post-mkfifo --", stdout, stderr].join(" ")
+        end  # if DEBUG
         unless status.success?
-          msg = "Webcam: Failed to create named pipe at #{pipe_path}: #{stderr}"
+          msg = "Webcam: ...Failed pipe mkfifo #{pipe_path}: #{stderr}"
           Environ.log_error(msg)
           raise AngaliaError::WebcamOperationError.new(msg)
         end  # failure
       end  # existed
 
-      # Open the named pipe for reading
-      @pipe_io = File.open(pipe_path, 'rb')
+      Environ.log_info "Webcam: opening pipeIO..."
+
+      # Open the named pipe for reading; 
+      # ...do not block if the other end of the pipe isn't open
+      @pipe_io = File.open(pipe_path, File::RDONLY | File::NONBLOCK | File::BINARY)
       @pipe_io.sync = true # Ensure reads are immediate
-      Environ.log_info "Webcam: Stream pipe #{pipe_path} opened for reading."
+      Environ.log_info "Webcam: ...Stream pipeIO opened"
       return @pipe_io # Return new pipe IO object
 
       # RESCUE BLOCK =======================================================
     rescue Errno::ENOENT => e
-      msg = "Webcam: Named pipe file not found at #{pipe_path}. Error: #{e.message}"
+      msg = "Webcam: pipe not found: #{pipe_path}. Error: #{e.message}"
       Environ.log_fatal(msg)
       raise AngaliaError::WebcamOperationError.new(msg) # Use WebcamOperationError
     rescue Errno::EACCES => e
-      msg = "Webcam: Permission denied to access named pipe at #{pipe_path}. Error: #{e.message}"
+      msg = "Webcam: Access permission denied pipe: #{pipe_path}. Error: #{e.message}"
       Environ.log_fatal(msg)
       raise AngaliaError::WebcamOperationError.new(msg) # Use WebcamOperationError
     rescue => e
-      msg = "Webcam: Unexpected error while opening stream pipe: #{e.message}"
+      msg = "Webcam: Unexpected error opening stream pipe: #{e.message}"
       Environ.log_fatal(msg)
       raise AngaliaError::WebcamOperationError.new(msg) # Use WebcamOperationError
     end  # end begin .. rescue block

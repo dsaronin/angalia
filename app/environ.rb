@@ -37,32 +37,41 @@ class Environ
   #  ------------------------------------------------------------
   #  GLOBAL CONSTANTS
   #  ------------------------------------------------------------
-
+  # angalia-hub named devices
+  #  ------------------------------------------------------------
   MY_MONITOR_DISPLAY_NAME  = "HDMI-A-0" # Default/initial monitor name
   DEV_MONITOR_DISPLAY_NAME = "HDMI-A-0" # Dev monitor name
   MY_WEBCAM_NAME = "video0"   # default webcam /dev name
-
   MY_SPEAKERS = "alsa_output.usb-Generic_USB2.0_Device_20121120222012-00.analog-stereo"
   MY_MIC = "alsa_input.usb-046d_0825_AA3F0D40-02.mono-fallback"
 
+  #  ------------------------------------------------------------
+  #  video conferencing
+  #  ------------------------------------------------------------
   MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia#config.prejoinPageEnabled=false"
   CHROMIUM_USER_DATA_DIR = File.expand_path("~/.angalia/chromium_profile")
+  #  ------------------------------------------------------------
+  #  vpn client stuff
+  #  ------------------------------------------------------------
   ANGALIA_VPN_CLIENT = "malagarasi-client"
   OPENVPN_CLIENT_CONFIG_PATH = "/home/daudi/certs/malagarasi-client.ovpn"
   VPN_RETRY_COUNT = 3 # Example: Retry 3 times
   VPN_SLEEP_COUNT = 5 # value for sleep before checking
+  #  ------------------------------------------------------------
+  #  livestream pipe stuff
+  #  ------------------------------------------------------------
   WEBCAM_PIPE = "CAMOUT"
-  WEBCAM_PIPE_PATH = "/tmp/#{MY_WEBCAM_NAME}"
+  WEBCAM_PIPE_PATH = "/tmp/#{WEBCAM_PIPE}"
   WEBCAM_READ_TIMEOUT_SECONDS  = 0.5
 
   #  ------------------------------------------------------------
- 
-# initialize the class-level instance variables
+  # class-level instance variables
+  #  ------------------------------------------------------------
   @angalia_version = Angalia::VERSION
   @app_name = APP_NAME 
   @app_name_head = APP_NAME_HEAD 
   @angalia_help = ANGALIA_HELP 
-
+  #  ------------------------------------------------------------
 
   class << self   
         # mixin Angalia::AnsiColor Module to provide prettier ansi output
