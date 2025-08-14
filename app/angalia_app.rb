@@ -336,11 +336,11 @@ class AngaliaApp < Sinatra::Application
  end # get /end_meet
 
   # ------------------------------------------------------------
-  # GET /weboff
+  # GET /offweb
   # Forces the livestream to stop and resets client count to zero.
   # This provides a manual override to stop the stream.
   # ------------------------------------------------------------
-  get '/weboff' do
+  get '/offweb' do
     # MUTEX BLOCK =======================================================
     @@livestream_mutex.synchronize do
       Environ.log_warn("App: '/weboff' Forcing livestream off; (#{@@livestream_client_count})")
@@ -375,7 +375,7 @@ class AngaliaApp < Sinatra::Application
     end
 
     redirect '/'
-  end # get /weboff
+  end # get /offweb
 
 
   # ------------------------------------------------------------
