@@ -37,6 +37,8 @@ class AngaliaApp < Sinatra::Application
   @@livestream_client_count = 0  # global livestream user counter
   @@is_jitsimeeting = false # Initialize the Jitsi meeting flag
   @@active_livestream_thread = nil  # Tracks livestream service thread
+  @@start_livestream = false       # true first time entering /webcam_stream
+
   @@livestream_mutex = Mutex.new    # syncs flag access/updates
   # =============================================================================
 
@@ -48,11 +50,14 @@ class AngaliaApp < Sinatra::Application
   # GET /
   # Home Page
   # Displays the main caregiver control panel with action buttons.
+  # @is_livestream true when we want the index.haml javascript to be
+  # engaged displaying the livestream within the img field.
   # ------------------------------------------------------------
   get '/' do
     # MUTEX BLOCK =======================================================
     @@livestream_mutex.synchronize do
-      @is_livestream = (@@livestream_client_count > 0 && !@@is_jitsimeeting)
+      @is_livestream = @@start_livestream  ||  
+                      (@@livestream_client_count > 0 && !@@is_jitsimeeting)
     end
     # MUTEX BLOCK =======================================================
     haml :index
@@ -92,6 +97,7 @@ class AngaliaApp < Sinatra::Application
         # We just need to ensure AngaliaWork is starting the stream.
           # RESCUE BLOCK =======================================================
         begin
+          @@start_livestream = true   # flag to force /webcam_start on index.haml
           ANGALIA.start_livestream(1) # Pass 1 to indicate at least one viewer is expected
           flash[:notice] = "Livestream is starting."
         rescue WebcamOperationError => e
@@ -130,6 +136,7 @@ class AngaliaApp < Sinatra::Application
     # MUTEX BLOCK =======================================================
     # Acquire a lock to safely modify the client count
     @@livestream_mutex.synchronize do
+      @@start_livestream = false   # always force the pending start_livestream false
       # Deny access if a Jitsi meeting is currently active
       if @@is_jitsimeeting
         Environ.log_info("App: Denying livestream request; Jitsi meeting is active.")
