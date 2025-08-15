@@ -176,10 +176,10 @@ class AngaliaApp < Sinatra::Application
             # we should break the loop.
             if !ANGALIA.is_livestreaming?
               Environ.log_warn("App: Livestream reported off by AngaliaWork, terminating stream loop.")
-              break # Break out of the loop if stream is no longer active
+              break     # Break out of the loop if stream is no longer active
             end
             sleep 0.1    # The sleep duration can be tuned.
-          end  # fi .. if
+          end  # fi .. if frame_data
 
         end  # continuous frame-reading loop 
         
@@ -187,15 +187,12 @@ class AngaliaApp < Sinatra::Application
       rescue IOError, Errno::EPIPE => e
         # Handle client disconnection or pipe errors gracefully.
         Environ.log_warn "App: Livestream pipe error: #{e.message}"
-        break # Break the loop on client disconnect
       rescue LivestreamForceStopError => e
         # This is the expected exception when /weboff forces the stream to stop
         Environ.log_warn "App: Livestream forcibly terminated: #{e.message}"
-        break # Explicitly break the loop upon forced termination
       rescue => e
         # Catch any other unexpected errors during streaming.
         Environ.log_error "App: Livestream unexpected error: #{e.message}"
-        break # Break the loop on unexpected errors
 
       ensure
 

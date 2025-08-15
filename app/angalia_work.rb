@@ -51,7 +51,7 @@ class AngaliaWork
       Environ.log_info("AngaliaWork: All device configurations successful")
 
       # RESCUE BLOCK =======================================================
-    rescue AngaliaError::MajorError => e
+    rescue MajorError => e
       Environ.put_and_log_error("AngaliaWork: Critical startup error: #{e.message}")
       # Re-raise error to top-level control; prevents application in a broken state
       raise

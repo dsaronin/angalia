@@ -26,7 +26,7 @@ require 'timeout'                # Timeout module useful other operations.
 # acting as the interface between the application and the file system pipe.
 
 # xxxx_stream Methods
-# These methods (reset_stream, streaming?, start_stream, stop_stream, get_stream_frame) 
+# These methods (reset_stream_state, streaming?, start_stream, stop_stream, get_stream_frame) 
 # are responsible for managing the ffmpeg process and the flow of actual image data. 
 # They handle starting and stopping the ffmpeg command that generates the video stream 
 # into the pipe, monitoring its status, and extracting individual JPEG frames 
@@ -46,22 +46,22 @@ class Webcam
   def initialize
     verify_configuration  # Perform configuration check on initialization
     clear_state
-    reset_stream   # initialize state
+    reset_stream_state   # initialize state
   end
 
   # ***********************************************************************
   # ******** STATE INITIALIZATION & CONFIGURATION *************************
   # ***********************************************************************
-  #
+
   # ------------------------------------------------------------
-  # reset_stream  -- reset the stream pipe and buffer state
+  # reset_stream_state  -- reset the stream pipe and buffer state
   # @pipe_io is the File object for named streaming pipe
   # @buffer accumulates partial frame data
   # ------------------------------------------------------------
-  def reset_stream
-    @pipe_io&.close rescue nil   # nop first time thru
-    @pipe_io = nil               # shows no streaming
-    @buffer = ""                 # clears/empties buffer
+  def reset_stream_state
+    @pipe_io&.close   # nop first time thru; otherwise closes pipe_io
+    @buffer = ""      # clears/empties buffer
+    @pipe_io = nil    # shows no streaming
   end
 
   # ------------------------------------------------------------
@@ -383,9 +383,9 @@ class Webcam
         chunk = @pipe_io.read_nonblock(100 * 1024) # Read up to 4KB non-blocking
 
         if chunk.nil? # EOF; ffmpeg process has stopped writing to the pipe
-          Environ.log_warn("Webcam: read_nonblock returned nil, pipe likely closed gracefully.")
-          reset_stream # Reset pipe and buffer state
-          raise WebcamOperationError.new("Webcam stream pipe closed unexpectedly.")
+          Environ.log_warn("Webcam: read_nonblock returned nil, pipe likely closed gracefully.")
+          reset_stream_state # Reset pipe and buffer state
+          raise LivestreamForceStopError.new("Webcam stream pipe closed unexpectedly.")
         end
 
         @buffer << chunk
@@ -423,13 +423,13 @@ class Webcam
       nil   # Return nil as no frame is ready yet.
 
     rescue EOFError # Pipe writer closed the pipe during read_nonblock
-      Environ.log_warn("Webcam: EOFError encountered during read_nonblock. Pipe closed unexpectedly.")
-      reset_stream # Reset pipe and buffer state
-      raise WebcamOperationError.new("Webcam stream pipe writer disconnected during read.")
+      Environ.log_warn("Webcam: Livestream pipe writer disconnected")
+      reset_stream_state # Reset pipe and buffer state
+      raise LivestreamForceStopError.new("Livestream pipe writer disconnected")
 
     rescue => e
       # Catch any other unexpected errors during read or parsing.
-      raise WebcamOperationError.new("Error reading or parsing webcam stream: #{e.message}")
+      raise WebcamOperationError.new("Error reading livestream: #{e.message}")
     end  # rescue
       # END RESCUE BLOCK ====================================================
 
@@ -522,7 +522,7 @@ class Webcam
       @pipe_io.close
       Environ.log_info "Webcam: stream pipe closed"
     end
-    reset_stream   # initialize state
+    reset_stream_state   # initialize state
   end
 
   # ***********************************************************************
