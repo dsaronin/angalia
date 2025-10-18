@@ -362,6 +362,12 @@ class Webcam
     JPEG_START = "\xFF\xD8".force_encoding('ASCII-8BIT')
     JPEG_END   = "\xFF\xD9".force_encoding('ASCII-8BIT')
   # ------------------------------------------------------------
+      # Adjust chunk size based on expected frame size/network conditions.
+    CHUNK_SIZE = 100 * 1024 # size of data to grab from Named Pipe
+      # MAX_BUFFER_SIZE is threshold WHEN self-healing Hard Reset of internal @buffer 
+      # occurs in case of corruption of frame START, END tags
+    MAX_BUFFER_SIZE = CHUNK_SIZE * 2 
+  # ------------------------------------------------------------
   def get_stream_frame(timeout_seconds = Environ::WEBCAM_READ_TIMEOUT_SECONDS)
     # return get_mock_webcam_frame  <-- CLI debugging usage only
 
@@ -380,7 +386,7 @@ class Webcam
       if readable_io && readable_io.include?(@pipe_io)
         # Data is available, read a chunk non-blocking.
         # Adjust chunk size based on expected frame size/network conditions.
-        chunk = @pipe_io.read_nonblock(100 * 1024) # Read up to 4KB non-blocking
+        chunk = @pipe_io.read_nonblock(CHUNK_SIZE) # Read up to 4KB non-blocking
 
         if chunk.nil? # EOF; ffmpeg process has stopped writing to the pipe
           Environ.log_warn("Webcam: read_nonblock returned nil, pipe likely closed gracefully.")
@@ -413,7 +419,14 @@ class Webcam
         end   # if end_index
       end   # if start_index
 
-      # If we reach here, either no start marker yet, or start marker found but no end marker.
+      # If we reach here, neither start nor end markers found; 
+      # check for overly full buffer due to ffmpeg corruption
+
+      if @buffer.length > MAX_BUFFER_SIZE
+        @buffer = ""
+        Environ.log_warn("WEBCAM: Buffer overflow; hard reset internal buffer.")
+      end     # hard buffer check/reset
+
       nil  # Return nil: waiting for more data to form a complete frame
 
       # RESCUE BLOCK =======================================================
