@@ -38,7 +38,7 @@ class AngaliaApp < Sinatra::Application
   @@is_jitsimeeting = false # Initialize the Jitsi meeting flag
   @@active_livestream_thread = nil  # Tracks livestream service thread
   @@start_livestream = false       # true first time entering /webcam_stream
-
+  @@active_livestream_timer_thread = nil # Tracks the 5-minute deadman timer thread
   @@livestream_mutex = Mutex.new    # syncs flag access/updates
   # =============================================================================
 
@@ -99,6 +99,36 @@ class AngaliaApp < Sinatra::Application
         begin
           @@start_livestream = true   # flag to force /webcam_start on index.haml
           ANGALIA.start_livestream(1) # Pass 1 to indicate at least one viewer is expected
+
+          # New Deadman Timer Logic:
+          if @@active_livestream_timer_thread && @@active_livestream_timer_thread.alive?
+            # If a timer is running, log and skip starting a new one
+            Environ.log_info("App: Livestream timer already active; not restarting.")
+          else
+            Environ.log_info("App: Starting 5-minute deadman timer for livestream.")
+            @@active_livestream_timer_thread = Thread.new do
+              sleep LIVESTREAM_TIMEOUT_SECONDS
+              # MUTEX BLOCK for shutdown: Acquire lock to ensure clean state change
+              @@livestream_mutex.synchronize do
+                if @@livestream_client_count > 0
+                  Environ.log_warn("App: Deadman timer expired. Forcing livestream stop via timer.")
+                  # Perform the forceful shutdown logic, similar to /offweb
+                  if @@active_livestream_thread && @@active_livestream_thread.alive?
+                    @@active_livestream_thread.raise(LivestreamForceStopError, "Deadman timer expired.")
+                  end
+                  @@livestream_client_count = 0
+                  # This will signal ANGALIAWork (and Webcam) to shut down if count is 0
+                  ANGALIA.stop_livestream(0) 
+                  flash[:notice] = "Livestream automatically stopped after 5 minutes." 
+                else
+                  Environ.log_info("App: Deadman timer expired, but livestream already stopped.")
+                end
+                @@active_livestream_timer_thread = nil
+              end
+            end
+          end
+
+
           flash[:notice] = "Livestream is starting."
         rescue WebcamOperationError => e
           flash[:error] = "Failed to start livestream: #{e.message}"
@@ -344,12 +374,19 @@ class AngaliaApp < Sinatra::Application
       @@livestream_client_count = 0
 
         # RESCUE BLOCK =======================================================
-        # Force terminate the active livestream thread if it exists
       begin # Added begin block
+        # Force terminate the active livestream thread if it exists
         if @@active_livestream_thread && @@active_livestream_thread.alive?
           Environ.log_warn("App: Terminate-Signal livestream thread /weboff")
           @@active_livestream_thread.raise(LivestreamForceStopError, "Forced stop via /weboff")
         end  # force stop to livestream listener
+
+        # New Deadman Timer Cancellation Logic:
+        if @@active_livestream_timer_thread && @@active_livestream_timer_thread.alive?
+          Environ.log_warn("App: Cancelling deadman timer via /offweb.")
+          @@active_livestream_timer_thread.kill
+          @@active_livestream_timer_thread = nil
+        end
       rescue LivestreamForceStopError => e
         Environ.log_info("App: Successfully signalled livestream thread to stop (expected).")
       rescue => e

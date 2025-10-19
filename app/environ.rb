@@ -65,6 +65,8 @@ class Environ
   WEBCAM_PIPE_PATH = "/tmp/#{WEBCAM_PIPE}"
   WEBCAM_READ_TIMEOUT_SECONDS  = 0.5
 
+  LIVESTREAM_TIMEOUT_SECONDS = (5 * 60)     # 5 minutes
+
   #  ------------------------------------------------------------
   # class-level instance variables
   #  ------------------------------------------------------------
