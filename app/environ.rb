@@ -48,7 +48,8 @@ class Environ
   #  ------------------------------------------------------------
   #  video conferencing
   #  ------------------------------------------------------------
-  MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia#config.prejoinPageEnabled=false"
+  PATIENT_NAME = "Mom"
+  MY_JITSI_MEET_ROOM = "https://jitsi.vpn.local/angalia#config.prejoinPageEnabled=false&userInfo.displayName=#{PATIENT_NAME}"
   CHROMIUM_USER_DATA_DIR = File.expand_path("~/.angalia/chromium_profile")
   #  ------------------------------------------------------------
   #  vpn client stuff
