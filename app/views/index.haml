@@ -14,7 +14,8 @@
           console.error("Failed to load webcam stream. Switching to placeholder and retrying in 5 seconds...");
           webcamImage.src = "/images/in-progress-meeting.png"; // Placeholder
           setTimeout(() => {
-            webcamImage.src = "/webcam_stream"; // Attempt reconnection
+            // webcamImage.src = "/webcam_stream"; // Attempt reconnection
+            window.location.reload(true); // Hard reload to force server state check
           }, 5000);
         };
       } else {
