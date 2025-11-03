@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Exec=flock -n /home/angalia-hub/log/angaliahub.lock /home/angalia-hub/bin/start_angalia.sh
+Hidden=false
+NoDisplay=false
+Name=Angalia Hub Sinatra App
+Comment=Starts the Angalia Hub Sinatra Thin server
