@@ -6,7 +6,7 @@ source "https://rubygems.org"
 gem 'sinatra'
 gem 'rack'
 gem 'rackup'
-gem 'thin'
+gem 'puma'
 gem 'pp'
 gem 'singleton'
 gem 'logger'

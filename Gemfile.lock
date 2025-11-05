@@ -2,8 +2,6 @@ GEM
   remote: https://rubygems.org/
   specs:
     base64 (0.3.0)
-    daemons (1.4.1)
-    eventmachine (1.2.7)
     haml (6.3.0)
       temple (>= 0.8.2)
       thor
@@ -12,9 +10,12 @@ GEM
     matrix (0.4.3)
     mustermann (3.0.4)
       ruby2_keywords (~> 0.0.1)
+    nio4r (2.7.5)
     pp (0.6.2)
       prettyprint
     prettyprint (0.2.0)
+    puma (7.1.0)
+      nio4r (~> 2.0)
     rack (3.2.0)
     rack-flash3 (1.0.5)
       rack
@@ -38,11 +39,6 @@ GEM
     sinatra-formhelpers-ng (1.9.1)
     singleton (0.3.0)
     temple (0.10.4)
-    thin (2.0.1)
-      daemons (~> 1.0, >= 1.0.9)
-      eventmachine (~> 1.0, >= 1.0.4)
-      logger
-      rack (>= 1, < 4)
     thor (1.4.0)
     tilt (2.6.1)
     v4l2-ruby (0.11.0)
@@ -56,13 +52,13 @@ DEPENDENCIES
   logger
   matrix (~> 0.4)
   pp
+  puma
   rack
   rack-flash3
   rackup
   sinatra
   sinatra-formhelpers-ng
   singleton
-  thin
   v4l2-ruby
   yaml
 
