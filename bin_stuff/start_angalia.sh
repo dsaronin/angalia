@@ -19,11 +19,14 @@ export SKIP_HUB_VPN="false"
 export VPN_TUNNEL_ENV="false"
 
 # Define log file path
-LOG_FILE="/home/angalia-hub/log/angalia_hub.log"
+LOG_DIR="/home/angalia-hub/log"
+LOG_FILE="$LOG_DIR/angalia_hub.log"
+PUMA_PID_FILE="$LOG_DIR/angalia_hub_puma.pid"
 
 # Ensure the log directory exists
-mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$LOG_DIR"
 
+# --- Log Rotation ---
 # Get current date and time in YYYYMMDD-HHMMSS format
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -37,9 +40,25 @@ if [ -f "$LOG_FILE" ]; then
     echo "Renamed existing log file to ${LOG_BASENAME}-${TIMESTAMP}${LOG_EXTENSION}"
 fi
 
-# Start the Thin server in the background, redirecting stdout and stderr to the log file.
-# nohup ensures the process continues running even if tty is closed.
-# bundle exec ensures all gems from the Gemfile are loaded correctly.
-nohup bundle exec thin -R config.ru -a 0.0.0.0 -p 8080 start >> "$LOG_FILE" 2>&1 &
+# --- PID Lock Check ---
+# This check prevents a double-launch of the puma server.
+if [ -f "$PUMA_PID_FILE" ]; then
+    OLD_PID=$(cat "$PUMA_PID_FILE")
+    # Check if the process ID from the file is still running
+    if ps -p "$OLD_PID" > /dev/null; then
+        # Echo to stdout since log file is new
+        echo "[ $(date +"%Y-%m-%d %H:%M:%S %Z") ] ANGALIA ERROR: Puma server is already running with PID $OLD_PID (from $PUMA_PID_FILE). Aborting."
+        exit 1 # Abort script
+    else
+        # The process is not running, so the PID file is stale
+        echo "[ $(date +"%Y-%m-%d %H:%M:%S %Z") ] ANGALIA WARN: Found stale PID file for $OLD_PID. Removing $PUMA_PID_FILE."
+        rm "$PUMA_PID_FILE"
+    fi
+fi
+
+# --- Start Puma Web Server ---
+# nohup ensures the process continues running.
+# '>> "$LOG_FILE" 2>&1 &' handles logging/daemonization and respects rotation.
+nohup bundle exec puma -C config/puma.rb >> "$LOG_FILE" 2>&1 &
 
 echo "Angalia-hub started. Check logs at $LOG_FILE"
