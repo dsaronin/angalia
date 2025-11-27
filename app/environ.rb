@@ -56,8 +56,8 @@ class Environ
   #  ------------------------------------------------------------
   ANGALIA_VPN_CLIENT = "malagarasi-client"
   OPENVPN_CLIENT_CONFIG_PATH = "/home/daudi/certs/malagarasi-client.ovpn"
-  VPN_RETRY_COUNT = 3 # Example: Retry 3 times
-  VPN_SLEEP_COUNT = 5 # value for sleep before checking
+  VPN_RETRY_COUNT = 10 # Example: Retry 10 times
+  VPN_SLEEP_COUNT = 10 # seconds for sleep before checking
   #  ------------------------------------------------------------
   #  livestream pipe stuff
   #  ------------------------------------------------------------

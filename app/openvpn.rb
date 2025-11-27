@@ -32,7 +32,10 @@ class OpenVPN
   # Raises OpenVPNError if the connection cannot be established or verified.
   # ------------------------------------------------------------
   def verify_configuration( connect )
-    begin
+     Environ.log_info("OpenVPN: Checking network state before VPN attempt...")
+     network_ready = log_network_state
+
+     begin
       unless system("systemctl is-active NetworkManager.service > /dev/null 2>&1")
         raise OpenVPNError.new("NetworkManager.service is not active. nmcli commands will not work.")
       end
@@ -55,9 +58,40 @@ class OpenVPN
       msg = "OpenVPN: Unexpected error during service start: #{e.message}"
       Environ.log_error(msg)
       raise OpenVPNError.new(msg)
+    
+    ensure
+      Environ.log_info("OpenVPN: Checking network state after VPN attempt...")
+      log_network_state   # logs the state again
     end
       # end rescue block ======================================================
   end # verify_configuration
+
+  # ------------------------------------------------------------
+
+  # ------------------------------------------------------------
+  # log_network_state -- Logs current wifi gateway and connectivity
+  # Returns: boolean (true if connectivity == 'full')
+  # ------------------------------------------------------------
+  def log_network_state
+    # Capture connectivity (full, limited, none)
+    conn_state = `nmcli networking connectivity`.strip
+    is_connected = "full" == conn_state.downcase
+    
+    # Capture Gateway info specifically for the Wifi Interface (wlo1)
+    # 2>/dev/null silences errors if the interface is missing entirely
+    gw_info = `nmcli -f IP4.GATEWAY device show wlo1 2>/dev/null`.strip.gsub(/\s+/, ' ')
+
+    # Log the snapshot
+    msg = "Network Snapshot: Connectivity='#{conn_state}', #{gw_info}"
+    
+    if is_connected
+      Environ.log_info(msg)
+    else
+      Environ.log_warn(msg) # Highlight potential issues in Yellow/Green
+    end
+
+    return is_connected
+  end
 
   # ------------------------------------------------------------
   #  start_vpn -- verifies services, connects tunnel
