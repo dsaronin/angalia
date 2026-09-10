@@ -103,8 +103,12 @@ class MeetView
       # `[:out, :err]=>:devnull` redirects stdout/stderr to /dev/null to prevent console spam.
       # command = "flatpak run org.chromium.Chromium --kiosk --autoplay-policy=no-user-gesture-required " \
       #          "--use-fake-ui-for-media-stream --disable-gpu #{jitsi_room_url}"
+      # REMOVED: command_parts = ["flatpak", "run", "org.chromium.Chromium"]
+
       # Base command for Flatpak Chromium
-      command_parts = ["flatpak", "run", "org.chromium.Chromium"]
+      # Executed via systemd-run --scope to sanitize the environment and isolate 
+      # the Flatpak sandbox from Puma's RVM/Bundler daemon context.
+      command_parts = ["systemd-run", "--user", "--scope", "flatpak", "run", "org.chromium.Chromium"]
 
       # Add --kiosk only if not in DEBUG_MODE
       command_parts << "--kiosk" unless Environ::DEBUG_MODE
