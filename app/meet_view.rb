@@ -124,6 +124,8 @@ class MeetView
       # Join parts into a single command string
       command = command_parts.join(" ")
 
+      Environ.log_info("MeetView: Executing command: #{command}")
+
       # Use Process.spawn to get PID and run in background
       @chromium_pid = Process.spawn(command, pgroup: true, [:out, :err] => '/dev/null')
 
