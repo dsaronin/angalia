@@ -121,13 +121,15 @@ class MeetView
       # command_parts << jitsi_room_url
       command_parts << "--app=#{jitsi_room_url}" # Use --app flag to launch as an application      
 
-      # Join parts into a single command string
-      command = command_parts.join(" ")
+      # REMOVED: Join into command string: command = command_parts.join(" ")
+      # REMOVED: Environ.log_info("MeetView: Executing command: #{command}")
+      # REMOVED: Process.spawn get PID; run background @chromium_pid = Process.spawn(command, pgroup: true, [:out, :err] => '/dev/null')
 
-      Environ.log_info("MeetView: Executing command: #{command}")
+      Environ.log_info("MeetView: Executing command parts: #{command_parts.inspect}")
 
-      # Use Process.spawn to get PID and run in background
-      @chromium_pid = Process.spawn(command, pgroup: true, [:out, :err] => '/dev/null')
+      # Pass the array directly to Process.spawn to bypass the shell and prevent
+      # metacharacters (like '&' in the URL) from truncating the command.
+      @chromium_pid = Process.spawn(*command_parts, pgroup: true, [:out, :err] => '/dev/null')
 
       # Check if the process actually started
       sleep 0.1 # Give Chromium a moment to start
