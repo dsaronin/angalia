@@ -115,7 +115,7 @@ class MeetView
       command_parts << "--start-fullscreen"
       # Add other necessary flags
       command_parts << "--autoplay-policy=no-user-gesture-required"
-      # command_parts << "--use-fake-ui-for-media-stream"
+      command_parts << "--use-fake-ui-for-media-stream"
       command_parts << "--disable-gpu"
       command_parts << "--disable-features=WebRTCPipeWireCapturer"
       command_parts << "--password-store=basic"
