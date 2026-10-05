@@ -95,15 +95,48 @@ class MeetView
   # Raises:
   #   MeetViewError: If Chromium fails to launch.
   # ------------------------------------------------------------
+  # Change history
+  # 2025
+  # REMOVED: Join into command string: command = command_parts.join(" ")
+  # REMOVED: Environ.log_info("MeetView: Executing command: #{command}")
+  # REMOVED: Process.spawn get PID; run background @chromium_pid = Process.spawn(command, pgroup: true, [:out, :err] => '/dev/null')
+  # Command to launch Flatpak Chromium in kiosk mode with auto-join flags
+  # `pgroup: true` makes it a process group leader, easier to kill all its children.
+  # `[:out, :err]=>:devnull` redirects stdout/stderr to /dev/null to prevent console spam.
+  # command = "flatpak run org.chromium.Chromium --kiosk --autoplay-policy=no-user-gesture-required " \
+  #          "--use-fake-ui-for-media-stream --disable-gpu #{jitsi_room_url}"
+  # REMOVED: command_parts = ["flatpak", "run", "org.chromium.Chromium"]
+  # command_parts << "--disable-features=WebRTCPipeWireCapturer"
+  # command_parts << "--disable-session-crashed-bubble" # Added to suppress restore prompt
+  #
+  # 2026
+  # added flags to throttle webcam to 15fps, and other flags
+  # whether jitsi_room_url arrives as 
+  # [https://jitsi.vpn.local/angalia](https://jitsi.vpn.local/angalia) or 
+  # already has partial hashes, the resulting --app=... 
+  # argument receives a properly joined fragment.
+  # replaced: command_parts << "--app=#{target_url}" # Use --app flag to launch as an application
+  # ------------------------------------------------------------
   def start_session(jitsi_room_url)
     Environ.log_info("MeetView: Starting Jitsi session at #{jitsi_room_url}")
     begin
-      # Command to launch Flatpak Chromium in kiosk mode with auto-join flags
-      # `pgroup: true` makes it a process group leader, easier to kill all its children.
-      # `[:out, :err]=>:devnull` redirects stdout/stderr to /dev/null to prevent console spam.
-      # command = "flatpak run org.chromium.Chromium --kiosk --autoplay-policy=no-user-gesture-required " \
-      #          "--use-fake-ui-for-media-stream --disable-gpu #{jitsi_room_url}"
-      # REMOVED: command_parts = ["flatpak", "run", "org.chromium.Chromium"]
+
+      # Constraints to stabilize Sonix SMY18 webcam and configure kiosk view
+      jitsi_params = [
+        "config.prejoinPageEnabled=false",
+        "config.startWithAudioMuted=false",
+        "config.startWithVideoMuted=false",
+        "config.constraints.video.frameRate.max=15",
+        "config.resolution=480",
+        "config.disableLocalVideoFlip=true"
+      ]
+
+      base_url, existing_fragment = jitsi_room_url.split('#', 2)
+      target_url = if existing_fragment && !existing_fragment.empty?
+                     "#{base_url}##{existing_fragment}&#{jitsi_params.join('&')}"
+                   else
+                     "#{base_url}##{jitsi_params.join('&')}"
+                   end
 
       # Base command for Flatpak Chromium
       # Executed via systemd-run --scope to sanitize the environment and isolate 
@@ -113,21 +146,22 @@ class MeetView
       # Add --kiosk only if not in DEBUG_MODE
       command_parts << "--kiosk" unless Environ::DEBUG_MODE
       command_parts << "--start-fullscreen"
+
       # Add other necessary flags
       command_parts << "--autoplay-policy=no-user-gesture-required"
       command_parts << "--use-fake-ui-for-media-stream"
       command_parts << "--disable-gpu"
-      # command_parts << "--disable-features=WebRTCPipeWireCapturer"
+
+      command_parts << "--disable-popup-blocking"
+      command_parts << "--disable-infobars"
+      command_parts << "--no-default-browser-check"
+      command_parts << "--disable-translate"
+
       command_parts << "--password-store=basic"
-      # command_parts << "--disable-session-crashed-bubble" # Added to suppress restore prompt
       command_parts << "--no-first-run" # Suppress first-run wizard
       command_parts << "--user-data-dir=#{Environ::CHROMIUM_USER_DATA_DIR}" # Use dedicated profile
-      # command_parts << jitsi_room_url
-      command_parts << "--app=#{jitsi_room_url}" # Use --app flag to launch as an application      
 
-      # REMOVED: Join into command string: command = command_parts.join(" ")
-      # REMOVED: Environ.log_info("MeetView: Executing command: #{command}")
-      # REMOVED: Process.spawn get PID; run background @chromium_pid = Process.spawn(command, pgroup: true, [:out, :err] => '/dev/null')
+      command_parts << "--app=#{target_url}" # Use --app flag to launch as an application
 
       Environ.log_info("MeetView: Executing command parts: #{command_parts.inspect}")
 
