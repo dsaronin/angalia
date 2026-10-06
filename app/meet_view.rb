@@ -128,6 +128,8 @@ class MeetView
         "config.startWithVideoMuted=false",
         "config.constraints.video.frameRate.max=15",
         "config.resolution=480",
+        "config.disableSimulcast=true",
+        "config.enableLayerSuspension=false",
         "config.disableLocalVideoFlip=true"
       ]
 
